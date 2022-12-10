@@ -9,8 +9,16 @@ calling of SNVs, indels, SVs, and STRS in the [Workflow Description Language](ht
 These workflows may be used locally, with Docker, or on Terra.
 
 ## Building Dockerfiles
-The docker images used in this repository can be 
+The docker images used in this repository can be built like so:
 
+```bash
+cd docker
+
+docker build -f <app>.Dockerfile -t <user>/<app> .
+
+## For a concrete example:
+docker build -f clair3.Dockerfile -t erictdawson/clair3
+```
 # Workflows
 
 ## Alignment
