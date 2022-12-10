@@ -118,15 +118,100 @@ task deepvariant {
     }
 }
 
-# task strspy {
+# task mosdepth {
 #     input {
-
+# Int diskGB = 0
+# Int nThreads = 24
+# Int gbRAM = 62
+# String hpcQueue = "norm"
+# Int runtimeMinutes = 240
+# String mosdepthDocker = ""
+# Int maxPreemptAttempts = 3
 #     }
 #     command {
-
 #     }
 #     output {
+#     }
+#     runtime {
+#         docker : "~{mosdepthDocker}"
+#         disks : "local-disk ~{auto_diskGB} SSD"
+#         cpu : nThreads
+#         memory : "~{gbRAM} GB"
+#         hpcMemory : gbRAM
+#         hpcQueue : "~{hpcQueue}"
+#         hpcRuntimeMinutes : runtimeMinutes
+#         zones : ["us-central1-a", "us-central1-b", "us-central1-c"]
+#         preemptible : maxPreemptAttempts
+#     }
+# }
 
+# task strspy {
+#     input {
+# Int diskGB = 0
+# Int nThreads = 24
+# Int gbRAM = 62
+# String hpcQueue = "norm"
+# Int runtimeMinutes = 240
+# String strspyDocker = ""
+# Int maxPreemptAttempts = 3
+#     }
+#     command {
+#     }
+#     output {
+#     }
+#     runtime {
+#         docker : "~{strspyDocker}"
+#         disks : "local-disk ~{auto_diskGB} SSD"
+#         cpu : nThreads
+#         memory : "~{gbRAM} GB"
+#         hpcMemory : gbRAM
+#         hpcQueue : "~{hpcQueue}"
+#         hpcRuntimeMinutes : runtimeMinutes
+#         zones : ["us-central1-a", "us-central1-b", "us-central1-c"]
+#         preemptible : maxPreemptAttempts
+#     }
+# }
+
+# task phasing {
+#     input {
+# Int diskGB = 0
+# Int nThreads = 24
+# Int gbRAM = 62
+# String hpcQueue = "norm"
+# Int runtimeMinutes = 240
+# String phasingDocker = ""
+# Int maxPreemptAttempts = 3
+#     }
+#     command {
+#     }
+#     output {
+#     }
+#     runtime {
+#         docker : "~{phasingDocker}"
+#         disks : "local-disk ~{auto_diskGB} SSD"
+#         cpu : nThreads
+#         memory : "~{gbRAM} GB"
+#         hpcMemory : gbRAM
+#         hpcQueue : "~{hpcQueue}"
+#         hpcRuntimeMinutes : runtimeMinutes
+#         zones : ["us-central1-a", "us-central1-b", "us-central1-c"]
+#         preemptible : maxPreemptAttempts
+#     }
+# }
+
+# task spectra {
+#     input {
+# Int diskGB = 0
+# Int nThreads = 24
+# Int gbRAM = 62
+# String hpcQueue = "norm"
+# Int runtimeMinutes = 240
+# String spectraDocker = ""
+# Int maxPreemptAttempts = 3
+#     }
+#     command {
+#     }
+#     output {
 #     }
 #     runtime {
 #         docker : "~{strspyDocker}"
