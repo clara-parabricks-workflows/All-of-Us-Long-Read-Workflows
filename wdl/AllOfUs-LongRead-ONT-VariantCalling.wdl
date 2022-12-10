@@ -202,6 +202,9 @@ workflow AoU_ONT_VariantCalling {
         Int snifflesGBRAM = 64
         Boolean snifflesOutputReadNames = false
 
+        ## Clair3 args
+        File? clairTargetsBed
+
         ## DeepVariant Runtime Args
         String pbPATH = "pbrun"
         File? pbLicenseBin
@@ -250,6 +253,14 @@ workflow AoU_ONT_VariantCalling {
             gbRAM=snifflesGBRAM
     }
 
+    call clair3 as clair{
+        input:
+            inputBAM=inputBAM,
+            inputBAI=inputBAI,
+            refTarball=refTarball,
+            targetsBed=clairTargetsBed
+    }
+
 
 
     output {
@@ -257,13 +268,14 @@ workflow AoU_ONT_VariantCalling {
         File snifflesVCF = sniffles.outputVCF
         File snifflesTBI = sniffles.outputTBI
 
-        # ## SNV calls from Clair3
-        # File? clairVCF = clair3.outputVCF
-        # File? clairTBI = clair3.outputTBI
+        ## SNV calls from Clair3
+        File clairPileupVCF = clair.pileupVCF
+        File clairFullAlignmentVCF = clair.fullAlignmentVCF
+        File clairMergeVCF = clair.mergeVCF
 
         ## SNV calls from DeepVariant
-        File? deepvariantVCF = deepvariant.outputVCF
-        File? deepvariantTBI = deepvariant.outputTBI
+        File deepvariantVCF = deepvariant.outputVCF
+        File deepvariantTBI = deepvariant.outputTBI
 
         # ## STRspy calls
         # File strspyVCF = strspy.outputVCF
