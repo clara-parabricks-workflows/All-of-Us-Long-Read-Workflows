@@ -14,11 +14,16 @@ To download Cromwell:
 
 ```bash
 ## Update the version as needed
-export version=81
+export version=84
 wget https://github.com/broadinstitute/cromwell/releases/download/${version}/cromwell-${version}.jar
 https://github.com/broadinstitute/cromwell/releases/download/${version}/womtool-${version}.jar
 ```
 
+To validate a WDL:
+
+```bash
+make validate
+```
 To run using Docker:
 
 ```bash

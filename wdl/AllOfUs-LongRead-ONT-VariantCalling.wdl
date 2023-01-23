@@ -118,32 +118,50 @@ task deepvariant {
     }
 }
 
-# task mosdepth {
-#     input {
-# Int diskGB = 0
-# Int nThreads = 24
-# Int gbRAM = 62
-# String hpcQueue = "norm"
-# Int runtimeMinutes = 240
-# String mosdepthDocker = ""
-# Int maxPreemptAttempts = 3
-#     }
-#     command {
-#     }
-#     output {
-#     }
-#     runtime {
-#         docker : "~{mosdepthDocker}"
-#         disks : "local-disk ~{auto_diskGB} SSD"
-#         cpu : nThreads
-#         memory : "~{gbRAM} GB"
-#         hpcMemory : gbRAM
-#         hpcQueue : "~{hpcQueue}"
-#         hpcRuntimeMinutes : runtimeMinutes
-#         zones : ["us-central1-a", "us-central1-b", "us-central1-c"]
-#         preemptible : maxPreemptAttempts
-#     }
-# }
+    task mosdepth {
+        input {
+            File inputBAM
+            File inputBAI
+            Int windowSize
+
+            Int diskGB = 0
+            Int nThreads = 12
+            Int gbRAM = 62
+            String hpcQueue = "norm"
+            Int runtimeMinutes = 240
+            String mosdepthDocker = ""
+            Int maxPreemptAttempts = 3
+        }
+        String outbase = basename(inputBAM, ".bam")
+        String outputDir = outbase + ".mosdepth"
+        Int auto_diskGB = if diskGB == 0 then ceil(size(inputBAM, "GB") * 3.2) + 80 else diskGB
+
+        command {
+            mkdir -p ~{outputDir} && \
+            mosdepth \
+                --by ~{windowSize} \
+                --threads ~{nThreads} \
+                --no-per-base \
+                --mapq 20 \
+                ${outputDir} \
+                ${inputBAM}
+
+        }
+        output {
+            File outputDepthFile = "~{outbase}.mosdepth.dist.txt"
+        }
+        runtime {
+            docker : "~{mosdepthDocker}"
+            disks : "local-disk ~{auto_diskGB} SSD"
+            cpu : nThreads
+            memory : "~{gbRAM} GB"
+            hpcMemory : gbRAM
+            hpcQueue : "~{hpcQueue}"
+            hpcRuntimeMinutes : runtimeMinutes
+            zones : ["us-central1-a", "us-central1-b", "us-central1-c"]
+            preemptible : maxPreemptAttempts
+        }
+    }
 
 # task strspy {
 #     input {
@@ -172,34 +190,8 @@ task deepvariant {
 #     }
 # }
 
-# task phasing {
-#     input {
-# Int diskGB = 0
-# Int nThreads = 24
-# Int gbRAM = 62
-# String hpcQueue = "norm"
-# Int runtimeMinutes = 240
-# String phasingDocker = ""
-# Int maxPreemptAttempts = 3
-#     }
-#     command {
-#     }
-#     output {
-#     }
-#     runtime {
-#         docker : "~{phasingDocker}"
-#         disks : "local-disk ~{auto_diskGB} SSD"
-#         cpu : nThreads
-#         memory : "~{gbRAM} GB"
-#         hpcMemory : gbRAM
-#         hpcQueue : "~{hpcQueue}"
-#         hpcRuntimeMinutes : runtimeMinutes
-#         zones : ["us-central1-a", "us-central1-b", "us-central1-c"]
-#         preemptible : maxPreemptAttempts
-#     }
-# }
 
-# task spectra {
+# task spectre {
 #     input {
 # Int diskGB = 0
 # Int nThreads = 24
@@ -231,9 +223,12 @@ task sniffles2 {
         File inputBAM
         File inputBAI
         File refTarball
+        String sampleName
         File? snifflesTandemRepeatBed
 
+        Boolean mosaicMode = false
         Boolean snifflesOutputReadNames = false
+        Int minSVLen = 50
 
         Int diskGB = 0
         Int nThreads = 24
@@ -252,15 +247,21 @@ task sniffles2 {
         mv ~{refTarball} ~{localTarball} && \
         tar xvf ~{localTarball} && \
         sniffles \
-        -i ~{inputBAM} \
+        --minsvlen ~{minSVLen} \
+        --threads ~{nThreads} \
         --reference ~{ref} \
+        --input ~{inputBAM} \
+        ~{if mosaicMode then "--mosaic" else ""} \
+        --sample-id ~{sampleName} \
         ~{if snifflesOutputReadNames then "--output-rnames" else ""} \
-        -v ~{outbase}.sniffles2.vcf.gz
+        --vcf ~{outbase}.sniffles2.vcf.gz \
+        --snf ~{outbase}.sniffles2.snf
 
     }
     output {
         File outputVCF = "~{outbase}.sniffles2.vcf.gz"
         File outputTBI = "~{outbase}.sniffles2.vcf.gz.tbi"
+        File outputSNF = "~{outbase}.sniffles2.snf"
     }
     runtime {
         docker : "~{snifflesDocker}"
@@ -345,6 +346,13 @@ workflow AoU_ONT_VariantCalling {
             refTarball=refTarball,
             targetsBed=clairTargetsBed
     }
+
+
+    call mosdepth {
+        input:
+
+    }
+
 
 
 
