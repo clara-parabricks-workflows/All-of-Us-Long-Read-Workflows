@@ -280,6 +280,7 @@ workflow AoU_ONT_VariantCalling {
     input {
         File inputBAM
         File inputBAI
+	String sampleName
         File refTarball
 
         ## Sniffles Options
@@ -294,7 +295,7 @@ workflow AoU_ONT_VariantCalling {
         ## DeepVariant Runtime Args
         String pbPATH = "pbrun"
         File? pbLicenseBin
-        String pbDocker = "erictdawson/parabricks-deepvariant"
+        String pbDocker = "nvcr.io/nvidia/clara/clara-parabricks:4.1.0-1"
         Boolean gvcfMode = false
         Int nGPU_DeepVariant = 4
         String gpuModel_DeepVariant = "nvidia-tesla-t4"
@@ -332,6 +333,7 @@ workflow AoU_ONT_VariantCalling {
         input:
             inputBAM=inputBAM,
             inputBAI=inputBAI,
+            sampleName=sampleName,
             refTarball=refTarball,
             snifflesTandemRepeatBed=snifflesTandemRepeatBed,
             nThreads=snifflesThreads,
@@ -350,7 +352,8 @@ workflow AoU_ONT_VariantCalling {
 
     call mosdepth {
         input:
-
+            inputBAM=inputBAM,
+            inputBAI=inputBAI
     }
 
 
