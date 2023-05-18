@@ -13,7 +13,7 @@ task clair3 {
         Boolean phaseMode = false
         
         Int nThreads = 24
-        String clairDocker = "erictdawson/clair"
+        String clairDocker = "erictdawson/clair3"
         Int diskGB = 0
         # Int nGPU = 2
         # String gpuModel = "nvidia-tesla-t4"
