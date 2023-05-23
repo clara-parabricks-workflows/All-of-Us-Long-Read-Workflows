@@ -6,7 +6,7 @@ task AlignBam {
         File inputReference
         File? referenceIndex
         String sampleName
-        String mm2Preset = "mapont"
+        String mm2Preset = "map-ont"
         Int nThreads = 32
         Int mapThreads = 28
 
@@ -24,8 +24,7 @@ task AlignBam {
     String outbase = basename(basename(basename(inputFASTQ, ".gz"), ".fq"), ".fastq")
     Int auto_diskGB = if diskGB == 0 then ceil(size(inputFASTQ, "GB") * 3.2) + ceil(size(inputReference, "GB") * 3) + 80 else diskGB
     command {
-        tar xvf ~{inputReference} && \
-        minimap2 \
+        time minimap2 \
         -Y \
         -H \
         -y \
@@ -36,6 +35,7 @@ task AlignBam {
         ~{inputReference} \
         ~{inputFASTQ} | \
         samtools sort \
+         -m 6G \
          -@ ~{sort_threads} - \
          > ~{outbase}.bam && \
          samtools index ~{outbase}.bam
@@ -67,7 +67,7 @@ workflow AoU_ONT_Alignment {
         File inputReference
         File? referenceIndex
         String sampleName = "sample"
-        String mm2Preset = "mapont"
+        String mm2Preset = "map-ont"
         Int mapThreads = 32
         String minimapDocker = "erictdawson/minimap2"
         Int minimap_RAM = 62

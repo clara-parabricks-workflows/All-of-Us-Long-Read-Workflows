@@ -28,17 +28,20 @@ task clair3 {
     String ref = basename(refTarball, ".tar")
     String outbase = basename(inputBAM, ".bam")
     command {
-        /opt/bin/run_clair3.sh \
-        --bam_fn=~{inputBAM} \   
-        --ref_fn=~{ref} \      
-        --threads=~{nThreads} \          
-        --platform="ont" \            
-        --model_path="~{modelPath}" \
-        --output=~{outbase}.clair3  \
-        ~{"--bed_fn=" + targetsBed} \
-        ~{"--sample_name=" + sampleName} \
-        ~{if gvcfMode then "--gvcf" else ""} \
-        ~{if phaseMode then "--enable_phasing" else ""}
+        /opt/bin/run_clair3.sh
+        
+        #  \
+        # --bam_fn="~{inputBAM}" \   
+        # --ref_fn="~{ref}" \      
+        # --threads="~{nThreads}" \          
+        # --platform="~{platform}" \            
+        # --model_path="~{modelPath}" \
+        # --output="~{outbase}.clair3" 
+
+    #         ~{"--bed_fn=" + targetsBed} \
+    # ~{"--sample_name=" + sampleName} \
+    # ~{if gvcfMode then "--gvcf" else ""} \
+    # ~{if phaseMode then "--enable_phasing" else ""} \
     }
     output {
         File pileupVCF = "~{outbase}.clair3/pileup.vcf.gz"
@@ -68,7 +71,7 @@ task deepvariant {
         File inputRefTarball
         String pbPATH = "pbrun"
         File? pbLicenseBin
-        String? pbDocker
+        String pbDocker = "nvcr.io/nvidia/clara/clara-parabricks:4.1.0-1"
         Boolean gvcfMode = false
         Int nGPU = 4
         String gpuModel = "nvidia-tesla-t4"
@@ -90,7 +93,9 @@ task deepvariant {
     command {
         mv ~{inputRefTarball} ${localTarball} && \
         time tar xvf ~{localTarball} && \
+        nvidia-smi && \
         time ${pbPATH} deepvariant \
+        --x3 \
         ~{if gvcfMode then "--gvcf " else ""} \
         --ref ${ref} \
         --in-bam ${inputBAM} \
@@ -104,6 +109,7 @@ task deepvariant {
         File outputTBI = "~{outVCF}.gz.tbi"
     }
     runtime {
+        docker : "~{pbDocker}"
         disks : "local-disk ~{auto_diskGB} SSD"
         cpu : nThreads
         memory : "~{gbRAM} GB"
@@ -129,26 +135,26 @@ task deepvariant {
             Int gbRAM = 62
             String hpcQueue = "norm"
             Int runtimeMinutes = 240
-            String mosdepthDocker = ""
+            String mosdepthDocker = "erictdawson/mosdepth"
             Int maxPreemptAttempts = 3
         }
         String outbase = basename(inputBAM, ".bam")
-        String outputDir = outbase + ".mosdepth"
         Int auto_diskGB = if diskGB == 0 then ceil(size(inputBAM, "GB") * 3.2) + 80 else diskGB
 
         command {
-            mkdir -p ~{outputDir} && \
             mosdepth \
                 --by ~{windowSize} \
                 --threads ~{nThreads} \
                 --no-per-base \
                 --mapq 20 \
-                ${outputDir} \
+                ${outbase} \
                 ${inputBAM}
 
         }
         output {
-            File outputDepthFile = "~{outbase}.mosdepth.dist.txt"
+            File outputRegionDepthFile = "~{outbase}.mosdepth.region.dist.txt"
+            File outputGlobalDepthFile = "~{outbase}.mosdepth.global.dist.txt"
+            File outputSummaryFile = "~{outbase}.mosdepth.summary.txt"
         }
         runtime {
             docker : "~{mosdepthDocker}"
@@ -280,7 +286,7 @@ workflow AoU_ONT_VariantCalling {
     input {
         File inputBAM
         File inputBAI
-	String sampleName
+	    String sampleName
         File refTarball
 
         ## Sniffles Options
@@ -361,8 +367,8 @@ workflow AoU_ONT_VariantCalling {
 
     output {
         ## SV calls from Sniffles
-        File snifflesVCF = sniffles.outputVCF
-        File snifflesTBI = sniffles.outputTBI
+        # File snifflesVCF = sniffles.outputVCF
+        # File snifflesTBI = sniffles.outputTBI
 
         ## SNV calls from Clair3
         File clairPileupVCF = clair.pileupVCF
@@ -370,8 +376,8 @@ workflow AoU_ONT_VariantCalling {
         File clairMergeVCF = clair.mergeVCF
 
         ## SNV calls from DeepVariant
-        File deepvariantVCF = deepvariant.outputVCF
-        File deepvariantTBI = deepvariant.outputTBI
+        # File deepvariantVCF = deepvariant.outputVCF
+        # File deepvariantTBI = deepvariant.outputTBI
 
         # ## STRspy calls
         # File strspyVCF = strspy.outputVCF

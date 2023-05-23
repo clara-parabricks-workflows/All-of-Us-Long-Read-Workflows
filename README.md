@@ -50,8 +50,9 @@ docker build -f clair3.Dockerfile -t erictdawson/clair3
 # Workflows
 
 ## Alignment
-The `wdl/AllOfUs-LongRead-ONT-AlignmentAndPhasing.wdl ` workflow runs minimap2 for alignment, sorting and indexing and then runs BAM tagging
-with WhatsHap. The final output is a phased, tagged BAM file.
+The `wdl/AllOfUs-LongRead-ONT-Alignment.wdl ` workflow runs minimap2 for alignment, sorting and indexing. The final output is BAM file.
+
+## Phasing
 
 ## Variant calling
 The following tools are used for variant calling (filled boxes represented implemented callers):
@@ -60,3 +61,6 @@ The following tools are used for variant calling (filled boxes represented imple
 - [X] DeepVariant (SNVs and indels) (with Parabricks)
 - [X] sniffles2 (SVs)
 - [ ] STRspy (STRs)
+
+## TODO:
+ - Separate out indexing step?
