@@ -13,10 +13,10 @@ task clair3 {
         Boolean phaseMode = false
         
         Int nThreads = 24
-        String clairDocker = "erictdawson/clair3"
+        String clairDocker = "erictdawson/clair3:latest"
         Int diskGB = 0
-        # Int nGPU = 2
-        # String gpuModel = "nvidia-tesla-t4"
+        Int nGPU = 2
+        String gpuModel = "nvidia-tesla-t4"
         # String gpuDriverVersion = "460.73.01"
         Int maxPreemptAttempts = 3
         Int runtimeMinutes = 300
@@ -28,17 +28,26 @@ task clair3 {
     String ref = basename(refTarball, ".tar")
     String outbase = basename(inputBAM, ".bam")
     command {
-        /opt/bin/run_clair3.sh
-        
-        #  \
-        # --bam_fn="~{inputBAM}" \   
-        # --ref_fn="~{ref}" \      
-        # --threads="~{nThreads}" \          
-        # --platform="~{platform}" \            
-        # --model_path="~{modelPath}" \
-        # --output="~{outbase}.clair3" 
+        set -o pipefail
+        set -e
+        set -u
+        set -o xtrace
 
-    #         ~{"--bed_fn=" + targetsBed} \
+        tar xvf ~{refTarball}
+
+        # REF=$(basename ~{ref})
+        # REF_IDX=$(basename ~{ref}.fai)
+        # ln -s ~{ref} ./$REF
+        # ln -s ~{ref}.fai ./$REF_IDX
+
+        # BAM=$(basename ~{inputBAM})
+        # BAI=$(basename ~{inputBAI})
+        # ln -s ~{inputBAM} ./$BAM
+        # ln -s ~{inputBAI} ./$BAI
+
+        /opt/bin/run_clair3.sh --ref_fn=~{ref} --threads=~{nThreads} --platform=~{platform} --model_path=~{modelPath} --output=~{outbase}.clair3 --bam_fn=~{inputBAM} 
+
+    # ~{"--bed_fn=" + targetsBed} \
     # ~{"--sample_name=" + sampleName} \
     # ~{if gvcfMode then "--gvcf" else ""} \
     # ~{if phaseMode then "--enable_phasing" else ""} \
@@ -53,9 +62,8 @@ task clair3 {
         disks : "local-disk ~{auto_diskGB} SSD"
         cpu : nThreads
         memory : "~{gbRAM} GB"
-        # gpuType : "~{gpuModel}"
-        # gpuCount : nGPU
-        # nvidiaDriverVersion : "~{gpuDriverVersion}"
+        gpuType : "~{gpuModel}"
+        gpuCount : nGPU
         hpcMemory : gbRAM
         hpcQueue : "~{hpcQueue}"
         hpcRuntimeMinutes : runtimeMinutes
@@ -315,25 +323,25 @@ workflow AoU_ONT_VariantCalling {
         Int maxPreemptAttempts = 3
     }
 
-    call deepvariant{
-        input:
-            inputBAM=inputBAM,
-            inputBAI=inputBAI,
-            inputRefTarball=refTarball,
-            pbLicenseBin=pbLicenseBin,
-            pbPATH=pbPATH,
-            gvcfMode=gvcfMode,
-            nThreads=nThreads_DeepVariant,
-            nGPU=nGPU_DeepVariant,
-            gpuModel=gpuModel_DeepVariant,
-            gpuDriverVersion=gpuDriverVersion_DeepVariant,
-            gbRAM=gbRAM_DeepVariant,
-            diskGB=diskGB_DeepVariant,
-            runtimeMinutes=runtimeMinutes_DeepVariant,
-            hpcQueue=hpcQueue_DeepVariant,
-            pbDocker=pbDocker,
-            maxPreemptAttempts=maxPreemptAttempts 
-    }
+    # call deepvariant{
+    #     input:
+    #         inputBAM=inputBAM,
+    #         inputBAI=inputBAI,
+    #         inputRefTarball=refTarball,
+    #         pbLicenseBin=pbLicenseBin,
+    #         pbPATH=pbPATH,
+    #         gvcfMode=gvcfMode,
+    #         nThreads=nThreads_DeepVariant,
+    #         nGPU=nGPU_DeepVariant,
+    #         gpuModel=gpuModel_DeepVariant,
+    #         gpuDriverVersion=gpuDriverVersion_DeepVariant,
+    #         gbRAM=gbRAM_DeepVariant,
+    #         diskGB=diskGB_DeepVariant,
+    #         runtimeMinutes=runtimeMinutes_DeepVariant,
+    #         hpcQueue=hpcQueue_DeepVariant,
+    #         pbDocker=pbDocker,
+    #         maxPreemptAttempts=maxPreemptAttempts 
+    # }
 
     call sniffles2 as sniffles{
         input:
@@ -356,11 +364,11 @@ workflow AoU_ONT_VariantCalling {
     }
 
 
-    call mosdepth {
-        input:
-            inputBAM=inputBAM,
-            inputBAI=inputBAI
-    }
+    # call mosdepth {
+    #     input:
+    #         inputBAM=inputBAM,
+    #         inputBAI=inputBAI
+    # }
 
 
 
