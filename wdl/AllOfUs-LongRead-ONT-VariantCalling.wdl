@@ -132,50 +132,51 @@ task deepvariant {
     }
 }
 
-    task mosdepth {
-        input {
-            File inputBAM
-            File inputBAI
-            Int windowSize
+task mosdepth {
+    input {
+        File inputBAM
+        File inputBAI
+        Int windowSize = 20
+        Boolean noPerBase = true
 
-            Int diskGB = 0
-            Int nThreads = 12
-            Int gbRAM = 62
-            String hpcQueue = "norm"
-            Int runtimeMinutes = 240
-            String mosdepthDocker = "erictdawson/mosdepth"
-            Int maxPreemptAttempts = 3
-        }
-        String outbase = basename(inputBAM, ".bam")
-        Int auto_diskGB = if diskGB == 0 then ceil(size(inputBAM, "GB") * 3.2) + 80 else diskGB
-
-        command {
-            mosdepth \
-                --by ~{windowSize} \
-                --threads ~{nThreads} \
-                --no-per-base \
-                --mapq 20 \
-                ${outbase} \
-                ${inputBAM}
-
-        }
-        output {
-            File outputRegionDepthFile = "~{outbase}.mosdepth.region.dist.txt"
-            File outputGlobalDepthFile = "~{outbase}.mosdepth.global.dist.txt"
-            File outputSummaryFile = "~{outbase}.mosdepth.summary.txt"
-        }
-        runtime {
-            docker : "~{mosdepthDocker}"
-            disks : "local-disk ~{auto_diskGB} SSD"
-            cpu : nThreads
-            memory : "~{gbRAM} GB"
-            hpcMemory : gbRAM
-            hpcQueue : "~{hpcQueue}"
-            hpcRuntimeMinutes : runtimeMinutes
-            zones : ["us-central1-a", "us-central1-b", "us-central1-c"]
-            preemptible : maxPreemptAttempts
-        }
+        Int diskGB = 0
+        Int nThreads = 12
+        Int gbRAM = 62
+        String hpcQueue = "norm"
+        Int runtimeMinutes = 240
+        String mosdepthDocker = "erictdawson/mosdepth"
+        Int maxPreemptAttempts = 3
     }
+    String outbase = basename(inputBAM, ".bam")
+    Int auto_diskGB = if diskGB == 0 then ceil(size(inputBAM, "GB") * 3.2) + 80 else diskGB
+
+    command {
+        mosdepth \
+            ~{"--by " + windowSize} \
+            --threads ~{nThreads} \
+            ~{if noPerBase then "--no-per-base" else ""} \
+            --mapq 20 \
+            ~{outbase} \
+            ~{inputBAM}
+
+    }
+    output {
+        File outputRegionDepthFile = "~{outbase}.mosdepth.region.dist.txt"
+        File outputGlobalDepthFile = "~{outbase}.mosdepth.global.dist.txt"
+        # File outputSummaryFile = "~{outbase}.mosdepth.summary.txt"
+    }
+    runtime {
+        docker : "~{mosdepthDocker}"
+        disks : "local-disk ~{auto_diskGB} SSD"
+        cpu : nThreads
+        memory : "~{gbRAM} GB"
+        hpcMemory : gbRAM
+        hpcQueue : "~{hpcQueue}"
+        hpcRuntimeMinutes : runtimeMinutes
+        zones : ["us-central1-a", "us-central1-b", "us-central1-c"]
+        preemptible : maxPreemptAttempts
+    }
+}
 
 # task strspy {
 #     input {
@@ -364,19 +365,19 @@ workflow AoU_ONT_VariantCalling {
     }
 
 
-    # call mosdepth {
-    #     input:
-    #         inputBAM=inputBAM,
-    #         inputBAI=inputBAI
-    # }
+    call mosdepth {
+        input:
+            inputBAM=inputBAM,
+            inputBAI=inputBAI
+    }
 
 
 
 
     output {
         ## SV calls from Sniffles
-        # File snifflesVCF = sniffles.outputVCF
-        # File snifflesTBI = sniffles.outputTBI
+        File snifflesVCF = sniffles.outputVCF
+        File snifflesTBI = sniffles.outputTBI
 
         ## SNV calls from Clair3
         File clairPileupVCF = clair.pileupVCF

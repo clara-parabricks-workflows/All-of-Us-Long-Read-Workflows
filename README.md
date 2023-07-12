@@ -52,6 +52,8 @@ docker build -f clair3.Dockerfile -t erictdawson/clair3
 ## Alignment
 The `wdl/AllOfUs-LongRead-ONT-Alignment.wdl ` workflow runs minimap2 for alignment, sorting and indexing. The final output is BAM file.
 
+- [X] FASTQ -> BAM with minimap2
+
 ## Phasing
 
 ## Variant calling
