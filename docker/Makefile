@@ -1,7 +1,6 @@
 
 DOCKERFILES = $(wildcard *.Dockerfile)
 BASE_REPO = erictdawson
-PUSH_REPO = javelina
 date = $(shell date +"%Y-%b-%d")
 
 make_tags:
@@ -17,13 +16,6 @@ build: $(APP).Dockerfile make_tags
 push: build  make_tags
 	+docker push $(BASE_REPO)/$(APP):latest && touch make_tags/$(APP).latest
 	+docker push $(BASE_REPO)/$(APP):$(date) && touch make_tags/$(APP).$(date)
-	#+docker push $(PUSH_REPO)/$(APP):latest && touch make_tags/$(APP).latest
-	#+docker push $(PUSH_REPO)/$(APP):$(date) && touch make_tags/$(APP).$(date)
-
-#base: base/base.Dockerfile
-#	docker build -t erictdawson/base -f base/base.Dockerfile . && touch make_tags/base.built
-#	+docker tag erictdawson/base erictdawson/base:latest
-#	+docker tag erictdawson/base erictdawson/base:$(date)
 
 clean:
 	$(RM) make_tags
