@@ -41,20 +41,30 @@ The docker images used in this repository can be built like so:
 
 ```bash
 cd docker
+make build APP=<app name>
 
-docker build -f <app>.Dockerfile -t <user>/<app> .
-
-## For a concrete example:
-docker build -f clair3.Dockerfile -t erictdawson/clair3
+## A concrete example
+cd docker
+make build APP=parabrick-deepvariant
 ```
+
+The resulting image can then be pushed to a repository by running:  
+```bash
+make push APP=<app name>
+```
+You can modify the build tag / push repo by editing the makefile.
+
 # Workflows
 
 ## Alignment
 The `wdl/AllOfUs-LongRead-ONT-Alignment.wdl ` workflow runs minimap2 for alignment, sorting and indexing. The final output is BAM file.
 
-- [X] FASTQ -> BAM with minimap2
+- [X] FASTQ -> BAM + BAI with minimap2
 
 ## Phasing
+
+- [ ] Phasing with WhatsHap
+
 
 ## Variant calling
 The following tools are used for variant calling (filled boxes represented implemented callers):
@@ -63,6 +73,3 @@ The following tools are used for variant calling (filled boxes represented imple
 - [X] DeepVariant (SNVs and indels) (with Parabricks)
 - [X] sniffles2 (SVs)
 - [ ] STRspy (STRs)
-
-## TODO:
- - Separate out indexing step?
