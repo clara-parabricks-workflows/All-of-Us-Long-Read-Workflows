@@ -1,0 +1,10 @@
+version: 1.2
+
+workflows:
+  - subclass: WDL
+    primaryDescriptorPath: /wdl/AllOfUs-LongRead-ONT-Alignment.wdl
+    name: AllOfUs-LongRead-ONT-Alignment
+    authors:
+      - name: Eric T. Dawson
+        affiliation: NVIDIA
+        orcid: 0000-0001-5448-1653
