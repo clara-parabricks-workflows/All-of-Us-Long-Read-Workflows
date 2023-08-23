@@ -77,6 +77,7 @@ task deepvariant {
         File inputBAM
         File inputBAI
         File inputRefTarball
+        File? modelFile
         String pbPATH = "pbrun"
         File? pbLicenseBin
         String pbDocker = "nvcr.io/nvidia/clara/clara-parabricks:4.1.0-1"
@@ -102,15 +103,55 @@ task deepvariant {
         mv ~{inputRefTarball} ${localTarball} && \
         time tar xvf ~{localTarball} && \
         nvidia-smi && \
-        time ${pbPATH} deepvariant \
-        --x3 \
-        ~{if gvcfMode then "--gvcf " else ""} \
-        --ref ${ref} \
-        --in-bam ${inputBAM} \
-        --out-variants ~{outVCF} \
-        ~{"--license-file " + pbLicenseBin} && \
+
+
+
+        /usr/local/parabricks/binaries/bin/deepvariant \
+        ~{ref} \
+        ~{inputBAM} 2 2 \
+        -o ~{outVCF} \
+        -n 6 \
+        --model ~{modelFile} \
+        -long_reads \
+        --sort_by_haplotypes \
+        --add_hp_channel \
+        --parse_sam_aux_fields \
+        -norealign_reads \
+        --vsc_min_fraction_indels 0.06 \
+        --track_ref_reads \
+        --phase_reads \
+        --pileup_image_width 199 \
+        --max_reads_per_partition 600 \
+        --partition_size 25000 \
+        --vsc_min_count_snps 2 \
+        --vsc_min_count_indels 2 \
+        --vsc_min_fraction_snps 0.12 \
+        --min_mapping_quality 1 \
+        --min_base_quality 10 \
+        --alt_aligned_pileup diff_channels \
+        --variant_caller VERY_SENSITIVE_CALLER \
+        --dbg_min_base_quality 15 \
+        --ws_min_windows_distance 80 \
+        --aux_fields_to_keep HP \
+        --p_error 0.001 \
+        --max_ins_size 10 && \
         bgzip ~{outVCF} && \
         tabix ~{outVCF}.gz
+
+
+
+
+        # time ${pbPATH} deepvariant \
+        # --x3 \
+        # ~{if gvcfMode then "--gvcf " else ""} \
+        # --ref ${ref} \
+        # --in-bam ${inputBAM} \
+        # --out-variants ~{outVCF} \
+        # ~{"--pb-model-file " + modelFile} \
+        # --mode pacbio \
+        # ~{"--license-file " + pbLicenseBin} && \
+        # bgzip ~{outVCF} && \
+        # tabix ~{outVCF}.gz
     }
     output {
         File outputVCF = "~{outVCF}.gz"
@@ -324,25 +365,25 @@ workflow AoU_ONT_VariantCalling {
         Int maxPreemptAttempts = 3
     }
 
-    # call deepvariant{
-    #     input:
-    #         inputBAM=inputBAM,
-    #         inputBAI=inputBAI,
-    #         inputRefTarball=refTarball,
-    #         pbLicenseBin=pbLicenseBin,
-    #         pbPATH=pbPATH,
-    #         gvcfMode=gvcfMode,
-    #         nThreads=nThreads_DeepVariant,
-    #         nGPU=nGPU_DeepVariant,
-    #         gpuModel=gpuModel_DeepVariant,
-    #         gpuDriverVersion=gpuDriverVersion_DeepVariant,
-    #         gbRAM=gbRAM_DeepVariant,
-    #         diskGB=diskGB_DeepVariant,
-    #         runtimeMinutes=runtimeMinutes_DeepVariant,
-    #         hpcQueue=hpcQueue_DeepVariant,
-    #         pbDocker=pbDocker,
-    #         maxPreemptAttempts=maxPreemptAttempts 
-    # }
+    call deepvariant{
+        input:
+            inputBAM=inputBAM,
+            inputBAI=inputBAI,
+            inputRefTarball=refTarball,
+            pbLicenseBin=pbLicenseBin,
+            pbPATH=pbPATH,
+            gvcfMode=gvcfMode,
+            nThreads=nThreads_DeepVariant,
+            nGPU=nGPU_DeepVariant,
+            gpuModel=gpuModel_DeepVariant,
+            gpuDriverVersion=gpuDriverVersion_DeepVariant,
+            gbRAM=gbRAM_DeepVariant,
+            diskGB=diskGB_DeepVariant,
+            runtimeMinutes=runtimeMinutes_DeepVariant,
+            hpcQueue=hpcQueue_DeepVariant,
+            pbDocker=pbDocker,
+            maxPreemptAttempts=maxPreemptAttempts 
+    }
 
     call sniffles2 as sniffles{
         input:
@@ -384,9 +425,9 @@ workflow AoU_ONT_VariantCalling {
         File clairFullAlignmentVCF = clair.fullAlignmentVCF
         File clairMergeVCF = clair.mergeVCF
 
-        ## SNV calls from DeepVariant
-        # File deepvariantVCF = deepvariant.outputVCF
-        # File deepvariantTBI = deepvariant.outputTBI
+        # SNV calls from DeepVariant
+        File deepvariantVCF = deepvariant.outputVCF
+        File deepvariantTBI = deepvariant.outputTBI
 
         # ## STRspy calls
         # File strspyVCF = strspy.outputVCF
