@@ -17,7 +17,6 @@ task clair3 {
         Int diskGB = 0
         Int nGPU = 2
         String gpuModel = "nvidia-tesla-t4"
-        # String gpuDriverVersion = "460.73.01"
         Int maxPreemptAttempts = 3
         Int runtimeMinutes = 300
         String hpcQueue = "norm"
@@ -84,7 +83,6 @@ task deepvariant {
         Boolean gvcfMode = false
         Int nGPU = 4
         String gpuModel = "nvidia-tesla-t4"
-        String gpuDriverVersion = "460.73.01"
         Int nThreads = 24
         Int gbRAM = 120
         Int diskGB = 0
@@ -103,10 +101,7 @@ task deepvariant {
         mv ~{inputRefTarball} ${localTarball} && \
         time tar xvf ~{localTarball} && \
         nvidia-smi && \
-
-
-
-        /usr/local/parabricks/binaries/bin/deepvariant \
+        time /usr/local/parabricks/binaries/bin/deepvariant \
         ~{ref} \
         ~{inputBAM} 2 2 \
         -o ~{outVCF} \
@@ -167,7 +162,6 @@ task deepvariant {
         hpcRuntimeMinutes : runtimeMinutes
         gpuType : "~{gpuModel}"
         gpuCount : nGPU
-        nvidiaDriverVersion : "~{gpuDriverVersion}"
         zones : ["us-central1-a", "us-central1-b", "us-central1-c"]
         preemptible : maxPreemptAttempts
     }
@@ -355,7 +349,6 @@ workflow AoU_ONT_VariantCalling {
         Boolean gvcfMode = false
         Int nGPU_DeepVariant = 4
         String gpuModel_DeepVariant = "nvidia-tesla-t4"
-        String gpuDriverVersion_DeepVariant = "460.73.01"
         Int nThreads_DeepVariant = 24
         Int gbRAM_DeepVariant = 120
         Int diskGB_DeepVariant = 0
@@ -376,7 +369,6 @@ workflow AoU_ONT_VariantCalling {
             nThreads=nThreads_DeepVariant,
             nGPU=nGPU_DeepVariant,
             gpuModel=gpuModel_DeepVariant,
-            gpuDriverVersion=gpuDriverVersion_DeepVariant,
             gbRAM=gbRAM_DeepVariant,
             diskGB=diskGB_DeepVariant,
             runtimeMinutes=runtimeMinutes_DeepVariant,

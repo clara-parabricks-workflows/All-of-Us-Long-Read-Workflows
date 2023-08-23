@@ -7,12 +7,12 @@ task AlignBam {
         File? referenceIndex
         String sampleName
         String mm2Preset = "map-ont"
-        Int nThreads = 32
+        Int nThreads = 64
         Int mapThreads = 28
 
         String? minimapDocker = "erictdawson/minimap2"
         Int diskGB = 0
-        Int gbRAM = 62
+        Int gbRAM = 140
         String hpcQueue = "norm"
         Int runtimeMinutes = 240
         Int maxPreemptAttempts = 3
@@ -50,9 +50,6 @@ task AlignBam {
         disks : "local-disk ~{auto_diskGB} SSD"
         cpu : nThreads
         memory : "~{gbRAM} GB"
-        # gpuType : "~{gpuModel}"
-        # gpuCount : nGPU
-        # nvidiaDriverVersion : "~{gpuDriverVersion}"
         hpcMemory : gbRAM
         hpcQueue : "~{hpcQueue}"
         hpcRuntimeMinutes : runtimeMinutes
