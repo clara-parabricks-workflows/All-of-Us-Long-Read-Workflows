@@ -18,7 +18,7 @@ task AlignBam {
         Int runtimeMinutes = 240
         Int maxPreemptAttempts = 3
     }
-    Int sort_threads = sort_threads
+    Int sort_threads = sortThreads
     ## Put a ceiling on mm2_threads so as not to oversubscribe our VM
     ## mm2_threads = min(mapThreads, nThreads - sort_threads - 1)
     Int mm2_threads = if nThreads - sort_threads >= mapThreads then mapThreads else nThreads - sort_threads -1
