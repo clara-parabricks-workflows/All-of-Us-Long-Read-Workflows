@@ -9,6 +9,7 @@ task AlignBam {
         String mm2Preset = "map-ont"
         Int nThreads = 64
         Int mapThreads = 28
+        Int sortThreads = 4
 
         String? minimapDocker = "erictdawson/minimap2"
         Int diskGB = 0
@@ -17,7 +18,7 @@ task AlignBam {
         Int runtimeMinutes = 240
         Int maxPreemptAttempts = 3
     }
-    Int sort_threads = 4
+    Int sort_threads = sort_threads
     ## Put a ceiling on mm2_threads so as not to oversubscribe our VM
     ## mm2_threads = min(mapThreads, nThreads - sort_threads - 1)
     Int mm2_threads = if nThreads - sort_threads >= mapThreads then mapThreads else nThreads - sort_threads -1
