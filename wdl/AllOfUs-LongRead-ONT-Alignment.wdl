@@ -18,10 +18,9 @@ task AlignBam {
         Int runtimeMinutes = 240
         Int maxPreemptAttempts = 3
     }
-    Int sort_threads = sortThreads
     ## Put a ceiling on mm2_threads so as not to oversubscribe our VM
     ## mm2_threads = min(mapThreads, nThreads - sort_threads - 1)
-    Int mm2_threads = if nThreads - sort_threads >= mapThreads then mapThreads else nThreads - sort_threads -1
+    Int mm2_threads = if nThreads - sortThreads >= mapThreads then mapThreads else nThreads - sortThreads -1
     String outbase = basename(basename(basename(inputFASTQ, ".gz"), ".fq"), ".fastq")
     Int auto_diskGB = if diskGB == 0 then ceil(size(inputFASTQ, "GB") * 3.2) + ceil(size(inputReference, "GB") * 3) + 80 else diskGB
     command {
@@ -37,7 +36,7 @@ task AlignBam {
         ~{inputFASTQ} | \
         samtools sort \
          -m 6G \
-         -@ ~{sort_threads} - \
+         -@ ~{sortThreads} - \
          > ~{outbase}.bam && \
          samtools index ~{outbase}.bam
 
