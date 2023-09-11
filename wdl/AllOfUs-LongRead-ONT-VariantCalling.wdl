@@ -79,7 +79,7 @@ task deepvariant {
         File? modelFile
         String pbPATH = "pbrun"
         File? pbLicenseBin
-        String pbDocker = "nvcr.io/nvidia/clara/clara-parabricks:4.1.0-1"
+        String pbDocker = "nvcr.io/nvidia/clara/clara-parabricks:4.1.2-1"
         Boolean gvcfMode = false
         Int nGPU = 4
         String gpuModel = "nvidia-tesla-t4"
@@ -100,7 +100,6 @@ task deepvariant {
     command {
         mv ~{inputRefTarball} ${localTarball} && \
         time tar xvf ~{localTarball} && \
-        nvidia-smi && \
         time /usr/local/parabricks/binaries/bin/deepvariant \
         ~{ref} \
         ~{inputBAM} 2 2 \
