@@ -1,5 +1,7 @@
 version 1.0
 
+import "https://raw.githubusercontent.com/clara-parabricks-workflows/parabricks-wdl/long-read/wdl/util/attributes.wdl"
+
 task AlignBam {
     input {
         File inputFASTQ
@@ -7,22 +9,26 @@ task AlignBam {
         File? referenceIndex
         String sampleName
         String mm2Preset = "map-ont"
-        Int nThreads = 64
         Int mapThreads = 28
         Int sortThreads = 4
+        String minimapDocker = "erictdawson/minimap2"
 
-        String? minimapDocker = "erictdawson/minimap2"
-        Int diskGB = 0
-        Int gbRAM = 140
-        String hpcQueue = "norm"
-        Int runtimeMinutes = 240
-        Int maxPreemptAttempts = 3
+        RuntimeAttributes attributes = {
+            "diskGB": 0,
+            "nThreads": 64,
+            "gbRAM": 126,
+            "hpcQueue": "norm",
+            "runtimeMinutes": 600,
+            "gpuDriverVersion": "535.104.05",
+            "maxPreemptAttempts": 3,
+            "zones": ["us-central1-a", "us-central1-b", "us-central1-c"]
+        }
     }
     ## Put a ceiling on mm2_threads so as not to oversubscribe our VM
     ## mm2_threads = min(mapThreads, nThreads - sort_threads - 1)
-    Int mm2_threads = if nThreads - sortThreads >= mapThreads then mapThreads else nThreads - sortThreads -1
+    Int mm2_threads = if attributes.nThreads - sortThreads >= mapThreads then mapThreads else attributes.nThreads - sortThreads -1
     String outbase = basename(basename(basename(inputFASTQ, ".gz"), ".fq"), ".fastq")
-    Int auto_diskGB = if diskGB == 0 then ceil(size(inputFASTQ, "GB") * 3.2) + ceil(size(inputReference, "GB") * 3) + 80 else diskGB
+    Int auto_diskGB = if attributes.diskGB == 0 then ceil(size(inputFASTQ, "GB") * 3.2) + ceil(size(inputReference, "GB") * 3) + 80 else attributes.diskGB
     command {
         time minimap2 \
         -Y \
@@ -38,7 +44,7 @@ task AlignBam {
          -m 6G \
          -@ ~{sortThreads} - \
          > ~{outbase}.bam && \
-         samtools index ~{outbase}.bam
+         samtools index -@4 ~{outbase}.bam
 
     }
     output {
@@ -48,13 +54,13 @@ task AlignBam {
     runtime {
         docker : "~{minimapDocker}"
         disks : "local-disk ~{auto_diskGB} SSD"
-        cpu : nThreads
-        memory : "~{gbRAM} GB"
-        hpcMemory : gbRAM
-        hpcQueue : "~{hpcQueue}"
-        hpcRuntimeMinutes : runtimeMinutes
-        zones : ["us-central1-a", "us-central1-b", "us-central1-c"]
-        preemptible : maxPreemptAttempts
+        cpu : attributes.nThreads
+        memory : "~{attributes.gbRAM} GB"
+        hpcMemory : attributes.gbRAM
+        hpcQueue : "~{attributes.hpcQueue}"
+        hpcRuntimeMinutes : attributes.runtimeMinutes
+        zones : attributes.zones
+        preemptible : attributes.maxPreemptAttempts
     }
 }
 
@@ -72,6 +78,17 @@ workflow AoU_ONT_Alignment {
         Int minimap_runtime_max = 600
     }
 
+        RuntimeAttributes attributes = {
+        "diskGB": 0,
+        "nThreads": 64,
+        "gbRAM": 125,
+        "hpcQueue": "norm",
+        "runtimeMinutes": 600,
+        "gpuDriverVersion": "535.104.05",
+        "maxPreemptAttempts": 3,
+        "zones": ["us-central1-a", "us-central1-b", "us-central1-c"]
+    }
+
     call AlignBam {
         input:
             inputFASTQ=inputFASTQ,
@@ -79,12 +96,8 @@ workflow AoU_ONT_Alignment {
             referenceIndex=referenceIndex,
             sampleName=sampleName,
             mm2Preset=mm2Preset,
-            nThreads=mapThreads,
             minimapDocker=minimapDocker,
-            gbRAM=minimap_RAM,
-            hpcQueue=minimap_queue,
-            runtimeMinutes=minimap_runtime_max,
-            maxPreemptAttempts=3
+            attributes=attributes
     }
 
 
