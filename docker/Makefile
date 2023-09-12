@@ -1,6 +1,6 @@
 
 DOCKERFILES = $(wildcard *.Dockerfile)
-BASE_REPO = erictdawson
+BASE_REPO = $(USER)
 date = $(shell date +"%Y-%b-%d")
 
 make_tags:
