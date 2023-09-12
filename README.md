@@ -24,6 +24,13 @@ To validate a WDL:
 ```bash
 make validate
 ```
+
+To generate example inputs:
+
+```bash
+make inputs
+```
+
 To run using Docker:
 
 ```bash
@@ -37,22 +44,16 @@ java -Dconfig.file=config/gcp_template.wdl.conf -jar cromwell-81.jar run -i inpu
 ```
 
 ## Building Dockerfiles
-The docker images used in this repository can be built like so:
+The docker images used in this repository can be built like so, where user is a Dockerhub username and app corresponds to the basename of a dockerfile:
 
 ```bash
 cd docker
-make build APP=<app name>
+make build APP=<app name> USER=<username>
 
-## A concrete example
+## Here's an example:
 cd docker
-make build APP=parabrick-deepvariant
+make build APP=spectre USER=eric
 ```
-
-The resulting image can then be pushed to a repository by running:  
-```bash
-make push APP=<app name>
-```
-You can modify the build tag / push repo by editing the makefile.
 
 # Workflows
 
