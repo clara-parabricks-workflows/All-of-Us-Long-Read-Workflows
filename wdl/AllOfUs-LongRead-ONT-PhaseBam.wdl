@@ -7,6 +7,7 @@ task phaseVCF {
         File inputVCF
         File inputTBI
         File inputRefTarball
+        String? sampleName
 
         String whatshapDocker = "erictdawson/whatshap"
         Int diskGB = 0
@@ -24,6 +25,7 @@ task phaseVCF {
     command {
         whatshap phase \
         -o ~{outbase}.phased.vcf \
+        --sample ~{"--sample " + sampleName} \
         --reference ~{inputReference} \
         ~{inputVCF} \
         ~{inputBAM} && \
