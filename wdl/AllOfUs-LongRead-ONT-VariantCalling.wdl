@@ -1,5 +1,8 @@
 version 1.0
 
+import "https://raw.githubusercontent.com/clara-parabricks-workflows/parabricks-wdl/long-read/wdl/util/vcf.wdl" as vcf
+
+
 task clair3 {
     input {
         File inputBAM
@@ -365,7 +368,6 @@ workflow AoU_ONT_VariantCalling {
 
         # SNV calls from DeepVariant
         File deepvariantVCF = deepvariant.outputVCF
-        File deepvariantTBI = deepvariant.outputTBI
 
         # ## STRspy calls
         # File strspyVCF = strspy.outputVCF

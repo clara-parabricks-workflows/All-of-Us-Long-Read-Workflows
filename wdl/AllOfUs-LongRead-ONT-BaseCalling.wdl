@@ -30,6 +30,7 @@ task fast5ToPod5 {
 task Dorado {
     input {
         File inputPOD5
+        String model = "dna_r10.4.1_e8.2_400bps_hac@v4.1.0"
         File? refTarball
 
         Int nThreads = 24
@@ -49,6 +50,8 @@ task Dorado {
     String outbase = basename(basename(basename(inputPOD5, ".gz"), ".fq"), ".fastq")
     Int auto_diskGB = if diskGB == 0 then ceil(size(inputPOD5, "GB") * 3.2) + ceil(size(refTarball, "GB") * 3) + 80 else diskGB
     command <<<
+        dorado download --model ~{model} && \
+        dorado basecaller ~{"--reference " + reference} ~{model}
     >>>
     output {
         File? outputFASTQ = "~{outbase}.fastq.gz"
