@@ -34,16 +34,6 @@ task clair3 {
 
         tar xvf ~{refTarball}
 
-        # REF=$(basename ~{ref})
-        # REF_IDX=$(basename ~{ref}.fai)
-        # ln -s ~{ref} ./$REF
-        # ln -s ~{ref}.fai ./$REF_IDX
-
-        # BAM=$(basename ~{inputBAM})
-        # BAI=$(basename ~{inputBAI})
-        # ln -s ~{inputBAM} ./$BAM
-        # ln -s ~{inputBAI} ./$BAI
-
         /opt/bin/run_clair3.sh --ref_fn=~{ref} --threads=~{nThreads} --platform=~{platform} --model_path=~{modelPath} --output=~{outbase}.clair3 --bam_fn=~{inputBAM} 
 
     # ~{"--bed_fn=" + targetsBed} \
@@ -100,56 +90,13 @@ task deepvariant {
     command {
         mv ~{inputRefTarball} ${localTarball} && \
         time tar xvf ~{localTarball} && \
-        time /usr/local/parabricks/binaries/bin/deepvariant \
-        ~{ref} \
-        ~{inputBAM} 2 2 \
-        -o ~{outVCF} \
-        -n 6 \
-        --model ~{modelFile} \
-        -long_reads \
-        --sort_by_haplotypes \
-        --add_hp_channel \
-        --parse_sam_aux_fields \
-        -norealign_reads \
-        --vsc_min_fraction_indels 0.06 \
-        --track_ref_reads \
-        --phase_reads \
-        --pileup_image_width 199 \
-        --max_reads_per_partition 600 \
-        --partition_size 25000 \
-        --vsc_min_count_snps 2 \
-        --vsc_min_count_indels 2 \
-        --vsc_min_fraction_snps 0.12 \
-        --min_mapping_quality 1 \
-        --min_base_quality 10 \
-        --alt_aligned_pileup diff_channels \
-        --variant_caller VERY_SENSITIVE_CALLER \
-        --dbg_min_base_quality 15 \
-        --ws_min_windows_distance 80 \
-        --aux_fields_to_keep HP \
-        --p_error 0.001 \
-        --max_ins_size 10 && \
-        bgzip ~{outVCF} && \
-        tabix ~{outVCF}.gz
-
-
-
-
-        # time ${pbPATH} deepvariant \
-        # --x3 \
-        # ~{if gvcfMode then "--gvcf " else ""} \
-        # --ref ${ref} \
-        # --in-bam ${inputBAM} \
-        # --out-variants ~{outVCF} \
-        # ~{"--pb-model-file " + modelFile} \
-        # --mode pacbio \
-        # ~{"--license-file " + pbLicenseBin} && \
-        # bgzip ~{outVCF} && \
-        # tabix ~{outVCF}.gz
+        time pbrun deepvariant \
+        --mode ont \
+        --in-bam ~{inputBAM} \
+        --out-variants ~{outVCF}
     }
     output {
-        File outputVCF = "~{outVCF}.gz"
-        File outputTBI = "~{outVCF}.gz.tbi"
+        File outputVCF = "~{outVCF}"
     }
     runtime {
         docker : "~{pbDocker}"
@@ -344,7 +291,7 @@ workflow AoU_ONT_VariantCalling {
         ## DeepVariant Runtime Args
         String pbPATH = "pbrun"
         File? pbLicenseBin
-        String pbDocker = "nvcr.io/nvidia/clara/clara-parabricks:4.1.0-1"
+        String pbDocker = "nvcr.io/nv-parabricks-dev/clara-parabricks:4.2.0-1.beta3"
         Boolean gvcfMode = false
         Int nGPU_DeepVariant = 4
         String gpuModel_DeepVariant = "nvidia-tesla-t4"
