@@ -1,4 +1,4 @@
-All of Us ONT Long Read Pipelines
+All of Us Long Read Pipelines
 ---------------------
 
 # Overview
