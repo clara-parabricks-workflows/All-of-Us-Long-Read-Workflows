@@ -149,32 +149,65 @@ task mosdepth {
 # }
 
 
-# task spectre {
-#     input {
-# Int diskGB = 0
-# Int nThreads = 24
-# Int gbRAM = 62
-# String hpcQueue = "norm"
-# Int runtimeMinutes = 240
-# String spectraDocker = ""
-# Int maxPreemptAttempts = 3
-#     }
-#     command {
-#     }
-#     output {
-#     }
-#     runtime {
-#         docker : "~{strspyDocker}"
-#         disks : "local-disk ~{auto_diskGB} SSD"
-#         cpu : nThreads
-#         memory : "~{gbRAM} GB"
-#         hpcMemory : gbRAM
-#         hpcQueue : "~{hpcQueue}"
-#         hpcRuntimeMinutes : runtimeMinutes
-#         zones : ["us-central1-a", "us-central1-b", "us-central1-c"]
-#         preemptible : maxPreemptAttempts
-#     }
-# }
+task spectre {
+    input {
+        File inputCovTarball
+        File inputRefTarball
+        File sampleName
+        Int binSize
+
+        File? snvVCF
+        File? blacklistBED
+        Int? ploidy
+        Int? nSize
+        Boolean populationMode = false
+        Int? minCNVLen
+
+        String spectreDocker = "erictdawson/spectre"
+        RuntimeAttributes runtime_attributes = {
+            "diskGB": 0,
+            "nThreads": 4,
+            "gbRAM": 11,
+            "hpcQueue": "norm",
+            "runtimeMinutes": 600,
+            "maxPreemptAttempts": 3
+        }
+    }
+
+    String ref = ""
+    Int auto_diskGB = 0
+    String outbase = ""
+    String mosdepthCoverageDirectory = ""
+    command {
+        python spectre/spectre.py CNVCaller \
+        --bin-size ~{binSize} \
+        --reference ~{ref} \
+        --sample-id sampleName \
+        --coverage ~{mosdepthCoverageDirectory} \
+        --output-dir ~{outbase} \
+        ~{"--threads " + runtime_attributes.nThreads} \
+        ~{"--blacklist " + blacklistBED} \
+        ~{"--ploidy " + ploidy} \
+        ~{"--snv " + snvVCF} \
+        ~{"--n-size " + nSize} \
+        ~{"--min_cnv_len " + minCNVLen} \
+        ~{if populationMode then "--population" else ""}
+    }
+    output {
+        File? outputTarball = ""
+    }
+    runtime {
+        docker : "~{spectreDocker}"
+        disks : "local-disk ~{auto_diskGB} SSD"
+        cpu : runtime_attributes.nThreads
+        memory : "~{runtime_attributes.gbRAM} GB"
+        hpcMemory : runtime_attributes.gbRAM
+        hpcQueue : "~{runtime_attributes.hpcQueue}"
+        hpcRuntimeMinutes : runtime_attributes.runtimeMinutes
+        zones : ["us-central1-a", "us-central1-b", "us-central1-c"]
+        preemptible : runtime_attributes.maxPreemptAttempts
+    }
+}
 
 task sniffles2 {
     input {
