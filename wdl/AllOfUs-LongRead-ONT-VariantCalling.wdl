@@ -84,7 +84,6 @@ task mosdepth {
             "gbRAM": 11,
             "hpcQueue": "norm",
             "runtimeMinutes": 600,
-            "gpuDriverVersion": "535.104.05",
             "maxPreemptAttempts": 3
         }
     }
@@ -183,22 +182,24 @@ task sniffles2 {
         File inputBAI
         File refTarball
         String sampleName
-        File? snifflesTandemRepeatBed
+        File? tandemRepeatBed
 
         Boolean mosaicMode = false
-        Boolean snifflesOutputReadNames = false
+        Boolean outputReadNames = false
         Int minSVLen = 50
 
-        Int diskGB = 0
-        Int nThreads = 24
-        Int gbRAM = 62
-        String hpcQueue = "norm"
-        Int runtimeMinutes = 240
         String snifflesDocker = "erictdawson/sniffles2"
-        Int maxPreemptAttempts = 3
+        RuntimeAttributes runtime_attributes = {
+            "diskGB": 0,
+            "nThreads": 24,
+            "gbRAM": 62,
+            "hpcQueue": "norm",
+            "runtimeMinutes": 240,
+            "maxPreemptAttempts": 3
+        }
     }
     String localTarball = basename(refTarball)
-    Int auto_diskGB = if diskGB == 0 then ceil(size(inputBAM, "GB")) + ceil(size(refTarball, "GB") * 3) + 80 else diskGB
+    Int auto_diskGB = if runtime_attributes.diskGB == 0 then ceil(size(inputBAM, "GB")) + ceil(size(refTarball, "GB") * 3) + 80 else runtime_attributes.diskGB
     String ref = basename(refTarball, ".tar")
     String outbase = basename(inputBAM, ".bam")
 
@@ -206,15 +207,16 @@ task sniffles2 {
         mv ~{refTarball} ~{localTarball} && \
         tar xvf ~{localTarball} && \
         sniffles \
-        --minsvlen ~{minSVLen} \
-        --threads ~{nThreads} \
+        ~{"--minsvlen " + minSVLen} \
+        --threads ~{runtime_attributes.nThreads} \
         --reference ~{ref} \
         --input ~{inputBAM} \
-        ~{if mosaicMode then "--mosaic" else ""} \
         --sample-id ~{sampleName} \
-        ~{if snifflesOutputReadNames then "--output-rnames" else ""} \
         --vcf ~{outbase}.sniffles2.vcf.gz \
         --snf ~{outbase}.sniffles2.snf
+        ~{if mosaicMode then "--mosaic" else ""} \
+        ~{"--tandem-repeats " + tandemRepeatBed} \
+        ~{if outputReadNames then "--output-rnames" else ""} 
 
     }
     output {
@@ -225,13 +227,13 @@ task sniffles2 {
     runtime {
         docker : "~{snifflesDocker}"
         disks : "local-disk ~{auto_diskGB} SSD"
-        cpu : nThreads
-        memory : "~{gbRAM} GB"
-        hpcMemory : gbRAM
-        hpcQueue : "~{hpcQueue}"
-        hpcRuntimeMinutes : runtimeMinutes
+        cpu : runtime_attributes.nThreads
+        memory : "~{runtime_attributes.gbRAM} GB"
+        hpcMemory : runtime_attributes.gbRAM
+        hpcQueue : "~{runtime_attributes.hpcQueue}"
+        hpcRuntimeMinutes : runtime_attributes.runtimeMinutes
         zones : ["us-central1-a", "us-central1-b", "us-central1-c"]
-        preemptible : maxPreemptAttempts
+        preemptible : runtime_attributes.maxPreemptAttempts
     }
 }
 
@@ -297,16 +299,24 @@ workflow AoU_ONT_VariantCalling {
             inputVCF=deepvariant.outputVCF
     }
 
+    RuntimeAttributes sniffles_attributes = {
+        "diskGB": 0,
+        "nThreads": 24,
+        "gbRAM": 62,
+        "hpcQueue": "norm",
+        "runtimeMinutes": 600,
+        "maxPreemptAttempts": 3,
+    }
+
     call sniffles2 as sniffles{
         input:
             inputBAM=inputBAM,
             inputBAI=inputBAI,
             sampleName=sampleName,
             refTarball=refTarball,
-            snifflesTandemRepeatBed=snifflesTandemRepeatBed,
-            nThreads=snifflesThreads,
-            snifflesOutputReadNames=snifflesOutputReadNames,
-            gbRAM=snifflesGBRAM
+            tandemRepeatBed=snifflesTandemRepeatBed,
+            outputReadNames=snifflesOutputReadNames,
+            runtime_attributes=sniffles_attributes
     }
 
     RuntimeAttributes clair_attributes = {
