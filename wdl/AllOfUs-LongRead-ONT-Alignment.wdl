@@ -27,7 +27,6 @@ workflow AoU_ONT_Alignment {
         "gbRAM": minimap_RAM + sortThreads*sortRAM_per_thread + 24,
         "hpcQueue": "norm",
         "runtimeMinutes": 600,
-        "gpuDriverVersion": "535.104.05",
         "maxPreemptAttempts": 3,
     }
 
