@@ -20,8 +20,7 @@ task AlignBam {
             "hpcQueue": "norm",
             "runtimeMinutes": 600,
             "gpuDriverVersion": "535.104.05",
-            "maxPreemptAttempts": 3,
-            "zones": ["us-central1-a", "us-central1-b", "us-central1-c"]
+            "maxPreemptAttempts": 3
         }
     }
     ## Put a ceiling on mm2_threads so as not to oversubscribe our VM
@@ -29,7 +28,7 @@ task AlignBam {
     Int mm2_threads = if attributes.nThreads - sortThreads >= mapThreads then mapThreads else attributes.nThreads - sortThreads -1
     String outbase = basename(basename(basename(inputFASTQ, ".gz"), ".fq"), ".fastq")
     Int auto_diskGB = if attributes.diskGB == 0 then ceil(size(inputFASTQ, "GB") * 3.2) + ceil(size(inputReference, "GB") * 3) + 80 else attributes.diskGB
-    command {
+    command <<<
         time minimap2 \
         -Y \
         -H \
@@ -45,8 +44,7 @@ task AlignBam {
          -@ ~{sortThreads} - \
          > ~{outbase}.bam && \
          samtools index -@4 ~{outbase}.bam
-
-    }
+    >>>
     output {
         File outputBAM = "~{outbase}.bam"
         File outputBAI= "~{outbase}.bam.bai"
@@ -59,8 +57,8 @@ task AlignBam {
         hpcMemory : attributes.gbRAM
         hpcQueue : "~{attributes.hpcQueue}"
         hpcRuntimeMinutes : attributes.runtimeMinutes
-        zones : attributes.zones
         preemptible : attributes.maxPreemptAttempts
+        zones: ["us-central1-a", "us-central1-b", "us-central1-c"]
     }
 }
 
@@ -86,7 +84,6 @@ workflow AoU_ONT_Alignment {
         "runtimeMinutes": 600,
         "gpuDriverVersion": "535.104.05",
         "maxPreemptAttempts": 3,
-        "zones": ["us-central1-a", "us-central1-b", "us-central1-c"]
     }
 
     call AlignBam {
