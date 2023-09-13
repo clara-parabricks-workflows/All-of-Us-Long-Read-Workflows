@@ -1,4 +1,5 @@
-WOMTOOL := womtool-84.jar
+WOMTOOL := womtool-85.jar
+CROMWELL := cromwell-85.jar
 PBDOCKER := "gcr.io/clara-lifesci/parabricks-cloud:4.0.0-1.beta4"
 DEFAULT_GPU_MODEL := "nvidia-tesla-t4"
 
@@ -23,7 +24,10 @@ $(INPUTS_DIR)/%.minimalInputs.json : $(WDL_DIR)/%.wdl FORCE
 $(INPUTS_DIR)/%.fullInputs.json : $(WDL_DIR)/%.wdl FORCE
 	+java -jar $(WOMTOOL) inputs $< | tee $@
 
-inputs: $(MIN_INPUTS) $(FULL_INPUTS)
+inputs: input_dir $(MIN_INPUTS) $(FULL_INPUTS)
+
+input_dir:
+	mkdir -p $(INPUTS_DIR)
 
 set_docker: $(wildcard $(WDL_DIR)/*.wdl)
 	for i in $^; do sed -i "s|pbDocker = \".*\"|pbDocker = \"$(PBDOCKER)\"|g" $$i ; done
@@ -37,6 +41,6 @@ pre:
 clean:
 	rm -rf $(VAL_DIR)
 
-.PHONY: validate inputs clean pre set_docker 
+.PHONY: validate inputs clean pre set_docker input_dir
 
 FORCE:
