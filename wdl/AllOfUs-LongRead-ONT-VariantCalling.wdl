@@ -71,25 +71,35 @@ task mosdepth {
         File inputBAM
         File inputBAI
         Int windowSize = 20
+        Int minMAPQ = 20
         Boolean noPerBase = true
-
-        Int diskGB = 0
-        Int nThreads = 12
-        Int gbRAM = 62
-        String hpcQueue = "norm"
-        Int runtimeMinutes = 240
+        Boolean useMedian = false
+        String? thresholds
+        String? quantize
+        
         String mosdepthDocker = "erictdawson/mosdepth"
-        Int maxPreemptAttempts = 3
+        RuntimeAttributes runtime_attributes = {
+            "diskGB": 0,
+            "nThreads": 4,
+            "gbRAM": 11,
+            "hpcQueue": "norm",
+            "runtimeMinutes": 600,
+            "gpuDriverVersion": "535.104.05",
+            "maxPreemptAttempts": 3
+        }
     }
     String outbase = basename(inputBAM, ".bam")
-    Int auto_diskGB = if diskGB == 0 then ceil(size(inputBAM, "GB") * 3.2) + 80 else diskGB
+    Int auto_diskGB = if runtime_attributes.diskGB == 0 then ceil(size(inputBAM, "GB") * 3.2) + 80 else runtime_attributes.diskGB
 
     command {
         mosdepth \
             ~{"--by " + windowSize} \
-            --threads ~{nThreads} \
+            --threads ~{runtime_attributes.nThreads} \
             ~{if noPerBase then "--no-per-base" else ""} \
-            --mapq 20 \
+            ~{"--mapq " + minMAPQ} \
+            ~{"--thresholds " + thresholds} \
+            ~{"--quantize " + quantize} \
+            ~{if useMedian then "--use-median" else ""} \
             ~{outbase} \
             ~{inputBAM}
 
@@ -102,13 +112,13 @@ task mosdepth {
     runtime {
         docker : "~{mosdepthDocker}"
         disks : "local-disk ~{auto_diskGB} SSD"
-        cpu : nThreads
-        memory : "~{gbRAM} GB"
-        hpcMemory : gbRAM
-        hpcQueue : "~{hpcQueue}"
-        hpcRuntimeMinutes : runtimeMinutes
+        cpu : runtime_attributes.nThreads
+        memory : "~{runtime_attributes.gbRAM} GB"
+        hpcMemory : runtime_attributes.gbRAM
+        hpcQueue : "~{runtime_attributes.hpcQueue}"
+        hpcRuntimeMinutes : runtime_attributes.runtimeMinutes
         zones : ["us-central1-a", "us-central1-b", "us-central1-c"]
-        preemptible : maxPreemptAttempts
+        preemptible : runtime_attributes.maxPreemptAttempts
     }
 }
 
