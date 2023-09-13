@@ -8,7 +8,7 @@ workflow AoU_ONT_Alignment {
         File inputFASTQ
         File inputReference
         File? referenceIndex
-        String sampleName = "sample"
+        String sampleName
         String mm2Preset = "map-ont"
         String mm2Flags = " -Y "
         Boolean addMDTag = true
