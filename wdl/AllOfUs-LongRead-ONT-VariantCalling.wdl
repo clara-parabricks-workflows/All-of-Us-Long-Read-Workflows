@@ -20,15 +20,6 @@ task clair3 {
         RuntimeAttributes runtime_attributes
         GPUAttributes gpu_attributes
 
-        # Int nThreads = 24
-        # Int diskGB = 0
-        # Int nGPU = 2
-        # String gpuModel = "nvidia-tesla-t4"
-        # Int maxPreemptAttempts = 3
-        # Int runtimeMinutes = 300
-        # String hpcQueue = "norm"
-        # Int gbRAM = 87
-
     }
     Int auto_diskGB = if runtime_attributes.diskGB == 0 then ceil(size(inputBAM, "GB") * 3.2) + ceil(size(refTarball, "GB")) + ceil(size(inputBAI, "GB")) + 65 else runtime_attributes.diskGB
     String ref = basename(refTarball, ".tar")
@@ -91,6 +82,11 @@ task mosdepth {
     Int auto_diskGB = if runtime_attributes.diskGB == 0 then ceil(size(inputBAM, "GB") * 3.2) + 80 else runtime_attributes.diskGB
 
     command {
+        set -o pipefail
+        set -e
+        set -u
+        set -o xtrace
+
         mosdepth \
             ~{"--by " + windowSize} \
             --threads ~{runtime_attributes.nThreads} \
@@ -100,12 +96,16 @@ task mosdepth {
             ~{"--quantize " + quantize} \
             ~{if useMedian then "--use-median" else ""} \
             ~{outbase} \
-            ~{inputBAM}
+            ~{inputBAM} && \
+            mkdir mosdepth && \
+            mv ~{outbase}.mosdepth* mosdepth/ && \
+            tar cvf mosdepth.tar mosdepth
 
     }
     output {
-        File outputRegionDepthFile = "~{outbase}.mosdepth.region.dist.txt"
-        File outputGlobalDepthFile = "~{outbase}.mosdepth.global.dist.txt"
+        File outputTarball = "mosdepth.tar"
+        # File outputRegionDepthFile = "~{outbase}.mosdepth.region.dist.txt"
+        # File outputGlobalDepthFile = "~{outbase}.mosdepth.global.dist.txt"
         # File outputSummaryFile = "~{outbase}.mosdepth.summary.txt"
     }
     runtime {
@@ -152,6 +152,11 @@ task spectre {
     String outbase = sampleName + ".spectre"
     String mosdepthCoverageDirectory = ""
     command {
+        set -o pipefail
+        set -e
+        set -u
+        set -o xtrace
+        
         mv ~{mosDepthTarball} . && \
         tar xvf ~{mosDepthTarball} && \
         mv ~{inputRefTarball} . && \
@@ -172,7 +177,7 @@ task spectre {
         tar cvf ~{outbase}.tar ~{outbase}
     }
     output {
-        File? outputTarball = "~{outbase}.tar"
+        File outputTarball = "~{outbase}.tar"
     }
     runtime {
         docker : "~{spectreDocker}"
@@ -215,6 +220,11 @@ task sniffles2 {
     String outbase = basename(inputBAM, ".bam")
 
     command {
+        set -o pipefail
+        set -e
+        set -u
+        set -o xtrace
+        
         mv ~{refTarball} ~{localTarball} && \
         tar xvf ~{localTarball} && \
         sniffles \
@@ -269,13 +279,10 @@ workflow AoU_ONT_VariantCalling {
         Boolean gvcfMode = false
         File? deepvariantModelFile
         String deepvariantMode = "ont"
-        Int nGPU_DeepVariant = 4
-        String gpuModel_DeepVariant = "nvidia-tesla-t4"
-        Int nThreads_DeepVariant = 24
-        Int gbRAM_DeepVariant = 120
-        Int diskGB_DeepVariant = 0
-        Int runtimeMinutes_DeepVariant = 600
-        String hpcQueue_DeepVariant = "gpu"
+
+        ## MosDepth inputs
+        Int windowSize = 20
+        Int minMAPQ = 20
 
         Int maxPreemptAttempts = 3
     }
@@ -358,7 +365,17 @@ workflow AoU_ONT_VariantCalling {
     call mosdepth {
         input:
             inputBAM=inputBAM,
-            inputBAI=inputBAI
+            inputBAI=inputBAI,
+            windowSize=windowSize,
+            minMAPQ=minMAPQ
+    }
+
+    call spectre {
+        input:
+            mosDepthTarball=mosdepth.outputTarball,
+            inputRefTarball=refTarball,
+            sampleName=sampleName,
+            binSize=windowSize
     }
 
 
@@ -377,6 +394,9 @@ workflow AoU_ONT_VariantCalling {
         # SNV calls from DeepVariant
         File deepvariantVCF = compress_deepVariant.outputVCFGZ
         File deepvariantTBI = compress_deepVariant.outputTBI
+
+        # Spectre CNV calls
+        File spectreOutput = spectre.outputTarball
 
     }
 }
