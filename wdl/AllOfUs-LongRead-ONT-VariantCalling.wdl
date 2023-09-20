@@ -121,37 +121,10 @@ task mosdepth {
     }
 }
 
-# task strspy {
-#     input {
-# Int diskGB = 0
-# Int nThreads = 24
-# Int gbRAM = 62
-# String hpcQueue = "norm"
-# Int runtimeMinutes = 240
-# String strspyDocker = ""
-# Int maxPreemptAttempts = 3
-#     }
-#     command {
-#     }
-#     output {
-#     }
-#     runtime {
-#         docker : "~{strspyDocker}"
-#         disks : "local-disk ~{auto_diskGB} SSD"
-#         cpu : nThreads
-#         memory : "~{gbRAM} GB"
-#         hpcMemory : gbRAM
-#         hpcQueue : "~{hpcQueue}"
-#         hpcRuntimeMinutes : runtimeMinutes
-#         zones : ["us-central1-a", "us-central1-b", "us-central1-c"]
-#         preemptible : maxPreemptAttempts
-#     }
-# }
-
 
 task spectre {
     input {
-        File inputCovTarball
+        File mosDepthTarball
         File inputRefTarball
         File sampleName
         Int binSize
@@ -174,11 +147,15 @@ task spectre {
         }
     }
 
-    String ref = ""
+    String ref = basename(inputRefTarball, ".tar")
     Int auto_diskGB = 0
-    String outbase = ""
+    String outbase = sampleName + ".spectre"
     String mosdepthCoverageDirectory = ""
     command {
+        mv ~{mosDepthTarball} . && \
+        tar xvf ~{mosDepthTarball} && \
+        mv ~{inputRefTarball} . && \
+        tar xvf ~{inputRefTarball} && \
         python spectre/spectre.py CNVCaller \
         --bin-size ~{binSize} \
         --reference ~{ref} \
@@ -191,10 +168,11 @@ task spectre {
         ~{"--snv " + snvVCF} \
         ~{"--n-size " + nSize} \
         ~{"--min_cnv_len " + minCNVLen} \
-        ~{if populationMode then "--population" else ""}
+        ~{if populationMode then "--population" else ""} && \
+        tar cvf ~{outbase}.tar ~{outbase}
     }
     output {
-        File? outputTarball = ""
+        File? outputTarball = "~{outbase}.tar"
     }
     runtime {
         docker : "~{spectreDocker}"
@@ -400,8 +378,5 @@ workflow AoU_ONT_VariantCalling {
         File deepvariantVCF = compress_deepVariant.outputVCFGZ
         File deepvariantTBI = compress_deepVariant.outputTBI
 
-        # ## STRspy calls
-        # File strspyVCF = strspy.outputVCF
-        # File strspyTBI = strspy.outputVCF
     }
 }
