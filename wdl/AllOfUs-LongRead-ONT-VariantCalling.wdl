@@ -32,7 +32,7 @@ task clair3 {
 
         tar xvf ~{refTarball}
 
-        /opt/bin/run_clair3.sh ~{"--sample_name " + sampleName} --ref_fn=~{ref} --threads=~{runtime_attributes.nThreads} --platform=~{platform} --model_path=~{modelPath} --output=~{outbase}.clair3 --bam_fn=~{inputBAM} ~{if gvcfMode then "--gvcf" else ""} ~{if phaseMode then "--enable_phasing" else ""} ~{"--bed_fn=" + targetsBed}
+        /opt/bin/run_clair3.sh ~{"--sample_name=" + sampleName} --ref_fn=~{ref} --threads=~{runtime_attributes.nThreads} --platform=~{platform} --model_path=~{modelPath} --output=~{outbase}.clair3 --bam_fn=~{inputBAM} ~{if gvcfMode then "--gvcf" else ""} ~{if phaseMode then "--enable_phasing" else ""} ~{"--bed_fn=" + targetsBed}
 
     }
     output {
@@ -126,7 +126,7 @@ task spectre {
     input {
         File mosDepthTarball
         File inputRefTarball
-        File sampleName
+        String sampleName
         Int binSize
 
         File? snvVCF
@@ -150,18 +150,20 @@ task spectre {
     String ref = basename(inputRefTarball, ".tar")
     Int auto_diskGB = 0
     String outbase = sampleName + ".spectre"
-    String mosdepthCoverageDirectory = ""
+    String mosdepthCoverageDirectory = basename(mosDepthTarball, ".tar")
+    String localMosDepthTarball = basename(mosDepthTarball)
+    String localRefTarball = basename(inputRefTarball)
     command {
         set -o pipefail
         set -e
         set -u
         set -o xtrace
         
-        mv ~{mosDepthTarball} . && \
-        tar xvf ~{mosDepthTarball} && \
-        mv ~{inputRefTarball} . && \
-        tar xvf ~{inputRefTarball} && \
-        python spectre/spectre.py CNVCaller \
+        mv ~{mosDepthTarball} ~{localMosDepthTarball} && \
+        tar xvf ~{localMosDepthTarball} && \
+        mv ~{inputRefTarball} ~{localRefTarball} && \
+        tar xvf ~{localRefTarball} && \
+        spectre.py CNVCaller \
         --bin-size ~{binSize} \
         --reference ~{ref} \
         --sample-id sampleName \
@@ -308,13 +310,24 @@ workflow AoU_ONT_VariantCalling {
             inputBAI=inputBAI,
             inputRefTarball=refTarball,
             gvcfMode=gvcfMode,
+            mode=deepvariantMode,
             runtime_attributes=deepvariant_attributes,
             gpu_attributes=deepvariant_gpu_attributes
     }
 
+    RuntimeAttributes dvcompress_attributes = {
+        "diskGB": 0,
+        "nThreads": 4,
+        "gbRAM": 9,
+        "hpcQueue": "norm",
+        "runtimeMinutes": 600,
+        "maxPreemptAttempts": 3,
+    }
+
     call vcf.compressAndIndexVCF as compress_deepVariant {
         input:
-            inputVCF=deepvariant.outputVCF
+            inputVCF=deepvariant.outputVCF,
+            attributes=dvcompress_attributes
     }
 
     RuntimeAttributes sniffles_attributes = {
@@ -339,7 +352,7 @@ workflow AoU_ONT_VariantCalling {
 
     RuntimeAttributes clair_attributes = {
         "diskGB": 0,
-        "nThreads": 24,
+        "nThreads": 6,
         "gbRAM": 87,
         "hpcQueue": "norm",
         "runtimeMinutes": 600,
@@ -358,16 +371,35 @@ workflow AoU_ONT_VariantCalling {
             inputBAI=inputBAI,
             refTarball=refTarball,
             targetsBed=clairTargetsBed,
-            runtime_attributes=clair_attributes
+            runtime_attributes=clair_attributes,
+            gpu_attributes=clair_gpu_attributes
     }
 
+    RuntimeAttributes mosdepth_attributes = {
+        "diskGB": 0,
+        "nThreads": 8,
+        "gbRAM": 14,
+        "hpcQueue": "norm",
+        "runtimeMinutes": 600,
+        "maxPreemptAttempts": 3,
+    }
 
     call mosdepth {
         input:
             inputBAM=inputBAM,
             inputBAI=inputBAI,
             windowSize=windowSize,
-            minMAPQ=minMAPQ
+            minMAPQ=minMAPQ,
+            runtime_attributes=mosdepth_attributes
+    }
+
+    RuntimeAttributes spectre_attributes = {
+        "diskGB": 0,
+        "nThreads": 24,
+        "gbRAM": 87,
+        "hpcQueue": "norm",
+        "runtimeMinutes": 600,
+        "maxPreemptAttempts": 3,
     }
 
     call spectre {
@@ -375,7 +407,8 @@ workflow AoU_ONT_VariantCalling {
             mosDepthTarball=mosdepth.outputTarball,
             inputRefTarball=refTarball,
             sampleName=sampleName,
-            binSize=windowSize
+            binSize=windowSize,
+            runtime_attributes=spectre_attributes
     }
 
 
