@@ -163,7 +163,7 @@ task spectre {
         tar xvf ~{localMosDepthTarball} && \
         mv ~{inputRefTarball} ~{localRefTarball} && \
         tar xvf ~{localRefTarball} && \
-        spectre.py CNVCaller \
+        spectre CNVCaller \
         --bin-size ~{binSize} \
         --reference ~{ref} \
         --sample-id sampleName \
