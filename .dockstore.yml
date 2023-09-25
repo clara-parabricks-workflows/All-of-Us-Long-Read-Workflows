@@ -8,3 +8,10 @@ workflows:
       - name: Eric T. Dawson
         affiliation: NVIDIA
         orcid: 0000-0001-5448-1653
+  - subclass: WDL
+    primaryDescriptorPath: /wdl/AllOfUs-LongRead-ONT-VariantCalling.wdl
+    name: AllOfUs-LongRead-ONT-VariantCalling
+    authors:
+      - name: Eric T. Dawson
+        affiliation: NVIDIA
+        orcid: 0000-0001-5448-1653
