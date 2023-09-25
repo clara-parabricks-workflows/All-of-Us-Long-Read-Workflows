@@ -98,7 +98,13 @@ task mosdepth {
             ~{outbase} \
             ~{inputBAM} && \
             mkdir mosdepth && \
-            mv ~{outbase}.mosdepth* mosdepth/ && \
+            mv ~{outbase}.regions.bed.gz mosdepth/ && \
+            mv ~{outbase}.regions.bed.gz.csi mosdepth/ && \
+            mv ~{outbase}.mosdepth.global.dist.txt mosdepth/ && \
+            mv ~{outbase}.mosdepth.region.dist.txt mosdepth/ && \
+            mv ~{outbase}.mosdepth.summary.txt mosdepth/ && \
+            [ ! -f ~{outbase}.per-base.bed.gz ] || mv ~{outbase}.per-base.bed.gz mosdepth/ && \
+            [ ! -f ~{outbase}.per-base.bed.gz ] || mv ~{outbase}.per-base.bed.gz.csi mosdepth/ && \
             tar cvf mosdepth.tar mosdepth
 
     }
