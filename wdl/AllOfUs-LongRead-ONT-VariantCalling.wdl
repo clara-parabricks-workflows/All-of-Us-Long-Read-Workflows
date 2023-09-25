@@ -148,7 +148,7 @@ task spectre {
     }
 
     String ref = basename(inputRefTarball, ".tar")
-    Int auto_diskGB = 0
+    Int auto_diskGB = if runtime_attributes.diskGB == 0 then ceil(size(inputRefTarball, "GB") * 3.2) + 80 else runtime_attributes.diskGB
     String outbase = sampleName + ".spectre"
     String mosdepthCoverageDirectory = basename(mosDepthTarball, ".tar")
     String localMosDepthTarball = basename(mosDepthTarball)
