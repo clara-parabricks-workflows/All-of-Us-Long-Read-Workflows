@@ -289,7 +289,7 @@ workflow AoU_ONT_VariantCalling {
         String deepvariantMode = "ont"
 
         ## MosDepth inputs
-        Int windowSize = 20
+        Int windowSize = 1000
         Int minMAPQ = 20
 
         Int maxPreemptAttempts = 3
