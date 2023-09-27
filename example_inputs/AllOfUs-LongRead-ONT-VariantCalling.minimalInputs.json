@@ -1,0 +1,7 @@
+{
+  "AoU_ONT_VariantCalling.refTarball": "File",
+  "AoU_ONT_VariantCalling.inputBAI": "File",
+  "AoU_ONT_VariantCalling.sampleName": "String",
+  "AoU_ONT_VariantCalling.inputBAM": "File",
+}
+

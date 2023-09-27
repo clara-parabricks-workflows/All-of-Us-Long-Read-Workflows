@@ -1,0 +1,6 @@
+{
+  "AoU_ONT_Alignment.inputFASTQ": "File",
+  "AoU_ONT_Alignment.sampleName": "String",
+  "AoU_ONT_Alignment.inputReference": "File"
+}
+

@@ -1,0 +1,17 @@
+{
+  "AoU_ONT_Alignment.sortThreads": "Int (optional, default = 6)",
+  "AoU_ONT_Alignment.inputFASTQ": "File",
+  "AoU_ONT_Alignment.minimap_runtime_max": "Int (optional, default = 600)",
+  "AoU_ONT_Alignment.sampleName": "String",
+  "AoU_ONT_Alignment.mapThreads": "Int (optional, default = 32)",
+  "AoU_ONT_Alignment.minimapDocker": "String (optional, default = \"erictdawson/minimap2\")",
+  "AoU_ONT_Alignment.sortRAM_per_thread": "Int (optional, default = 6)",
+  "AoU_ONT_Alignment.minimap_queue": "String (optional, default = \"norm\")",
+  "AoU_ONT_Alignment.mm2Flags": "String (optional, default = \" -Y \")",
+  "AoU_ONT_Alignment.minimap_RAM": "Int (optional, default = 120)",
+  "AoU_ONT_Alignment.addMDTag": "Boolean (optional, default = true)",
+  "AoU_ONT_Alignment.mm2Preset": "String (optional, default = \"map-ont\")",
+  "AoU_ONT_Alignment.referenceIndex": "File? (optional)",
+  "AoU_ONT_Alignment.inputReference": "File"
+}
+
