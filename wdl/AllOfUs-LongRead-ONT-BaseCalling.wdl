@@ -4,28 +4,33 @@ import "https://raw.githubusercontent.com/clara-parabricks-workflows/parabricks-
 
 task fast5ToPod5 {
     input {
-        File inputFAST5
+        File inputFAST5tarball
         String pod5Docker = "erictdawson/pod5tools"
     }
 
     RuntimeAttributes runtime_attributes = {
         "diskGB": 0,
-        "nThreads": 4,
-        "gbRAM": 16,
+        "nThreads": 8,
+        "gbRAM": 26,
         "hpcQueue": "norm",
         "runtimeMinutes": 600,
         "maxPreemptAttempts": 3,
     }
 
-    Int auto_diskGB = if runtime_attributes.diskGB == 0 then ceil(size(inputFAST5, "GB")) + 80 else runtime_attributes.diskGB
+    Int auto_diskGB = if runtime_attributes.diskGB == 0 then ceil(size(inputFAST5tarball, "GB") * 4) + 80 else runtime_attributes.diskGB
 
-    String outbase = basename(inputFAST5, ".fast5")
+    String outbase = basename(inputFAST5tarball, ".tar")
+    String outputDir = outbase + ".pod5"
+    String outputTarball = outputDir + ".tar"
     command <<<
-        pod5 convert fast5 --input ~{inputFAST5} ~{outbase}.pod5
+        mkdir ~{outbase}.pod5s && \
+        tar xf ~{inputFAST5tarball} && \
+        pod5 convert fast5 --one-to-one ~{outbase}/ --input ~{outbase}/ ~{outputDir} && \
+        tar cf ~{outputPOD5tarball} ~{outputDir}
     >>>
 
     output {
-        File outputPOD5 = "~{outbase}.pod5"
+        File outputPOD5tarball = "~{outputPOD5tarball}"
     }
 
     runtime {
@@ -41,15 +46,59 @@ task fast5ToPod5 {
     }
 }
 
-task Dorado {
+# task splitPOD5ByChannel {
+#     input {
+#         File inputPOD5tarball
+#     }
+
+#     RuntimeAttributes runtime_attributes = {
+#         "diskGB": 0,
+#         "nThreads": 24,
+#         "gbRAM": 120,
+#         "hpcQueue": "norm",
+#         "runtimeMinutes": 600,
+#         "maxPreemptAttempts": 3,
+#     }
+
+#     String outbase = basename(inputPOD5tarball, ".tar")
+
+#     command <<<
+#     tar xf ~{inputPOD5tarball} && \
+#     time pod5 view ~{outbase} --include "read_id,channel" --output summary.tsv && \
+#     time pod5 subset ~{pod5dir} --summary summary.tsv --columns channel --output split_by_channel
+#     >>>
+
+#     output {
+
+#     }
+
+#     runtime {
+
+#     }
+# }
+
+# task DoradoNoAlign {
+#     input {
+
+#     }
+#     command <<<
+#     >>>
+#     output {
+
+#     }
+#     runtime {
+
+#     }
+# }
+
+task DoradoWithAlignment {
     input {
-        File inputPOD5
-        File refTarball
+        File inputPOD5tarball
+        File inputRefTarball
         String model = "dna_r10.4.1_e8.2_400bps_hac@v4.1.0"
 
         String doradoDocker = "ontresearch/dorado:sha31bb7b1fa487fb5b78d765406ecb0aa5ab78ef09"
     }
-    Int sort_threads = 4
 
     RuntimeAttributes runtime_attributes = {
         "diskGB": 0,
@@ -65,13 +114,16 @@ task Dorado {
         "nGPU" : 4,
         "gpuDriverVersion": "535.104.05"
     }
+
+    Int sort_threads = 6
+
     ## Put a ceiling on mm2_threads so as not to oversubscribe our VM
     ## mm2_threads = min(mapThreads, nThreads - sort_threads - 1)
     # Int mm2_threads = if nThreads - sort_threads >= mapThreads then mapThreads else nThreads - sort_threads -1
-    String outbase = basename(basename(basename(inputPOD5, ".gz"), ".fq"), ".fastq")
-    Int auto_diskGB = if runtime_attributes.diskGB == 0 then ceil(size(inputPOD5, "GB") * 3.2) + ceil(size(refTarball, "GB") * 3) + 80 else runtime_attributes.diskGB
-    String localTarball = basename(refTarball)
-    String ref = basename(refTarball, ".tar")
+    String outbase = basename(inputPOD5tarball, ".tar")
+    Int auto_diskGB = if runtime_attributes.diskGB == 0 then ceil(size(inputPOD5tarball, "GB") * 3.2) + ceil(size(inputRefTarball, "GB") * 3) + 80 else runtime_attributes.diskGB
+    String localTarball = basename(inputRefTarball)
+    String ref = basename(inputRefTarball, ".tar")
 
     command <<<
         set -o pipefail
@@ -79,15 +131,19 @@ task Dorado {
         set -u
         set -o xtrace
         
-        mv ~{refTarball} ~{localTarball} && \
+        mv ~{inputRefTarball} ~{localTarball} && \
         tar xvf ~{localTarball} && \
+        tar xf ~{inputPOD5tarball} && \
         dorado download --model ~{model} && \
-        dorado basecaller ~{"--reference " + ref} ~{model}
+        dorado basecaller ~{"--reference " + ref} ~{model} ~{outbase} | \
+        samtools sort --threads ~{sort_threads} -m12g -O BAM -o ~{outbase}.bam --write-index && \
+        samtools index ~{outbase}.bam
     >>>
+
     output {
-        File? outputFASTQ = "~{outbase}.fastq.gz"
-        File? outputBAM = "~{outbase}.bam"
-        File? outputBAI= "~{outbase}.bam.bai"
+        File outputBAM = "~{outbase}.bam"
+        File outputBAI= "~{outbase}.bam.bai"
+        File outputCSI = "~{outbase}.bam.csi"
     }
     runtime {
         docker : "~{doradoDocker}"
@@ -107,16 +163,29 @@ task Dorado {
 }
 
 
-# workflow {
-#     input {
-#         File inputSquigglefile
-#         File inputRefTarball
-#     }
+workflow DoradoBasecall {
+    input {
+        File inputFAST5tarball
+        File inputRefTarball
+        String pod5Docker = "erictdawson/pod5tools"
+    }
 
-#     output {
-        
-#     }
+    call fast5ToPod5{
+        input:
+            inputFAST5tarball=inputFAST5tarball,
+            pod5Docker=pod5Docker
+    }
+
+    call DoradoWithAlignment{
+        input:
+            inputPOD5tarball=fast5ToPod5.outputPOD5tarball,
+            inputRefTarball=inputRefTarball
+    }
 
 
-
-# }
+    output {
+        File? outputPOD5tarball = ""
+        File? outputBAM = DoradoWithAlignment.outputBAM
+        File? outputBAI = DoradoWithAlignment.outputBAI        
+    }
+}
