@@ -97,7 +97,7 @@ task DoradoWithAlignment {
         File inputRefTarball
         String model = "dna_r10.4.1_e8.2_400bps_hac@v4.1.0"
 
-        String doradoDocker = "ontresearch/dorado:sha31bb7b1fa487fb5b78d765406ecb0aa5ab78ef09"
+        String doradoDocker = "ontresearch/dorado"
     }
 
     RuntimeAttributes runtime_attributes = {
@@ -184,7 +184,7 @@ workflow DoradoBasecall {
 
 
     output {
-        File? outputPOD5tarball = ""
+        File? outputPOD5tarball = fast5ToPod5.outputPOD5tarball
         File? outputBAM = DoradoWithAlignment.outputBAM
         File? outputBAI = DoradoWithAlignment.outputBAI        
     }
