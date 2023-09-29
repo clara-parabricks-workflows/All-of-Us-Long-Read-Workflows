@@ -26,8 +26,7 @@ task fast5ToPod5 {
     String outputTarball = outputDir + ".tar"
     command <<<
         mkdir ~{outputDir} && \
-        mv ~{inputFAST5tarball} ~{localFAST5tarball} && \
-        tar xf ~{localFAST5tarball} && \
+        tar xf ~{inputFAST5tarball} -C `pwd` && \
         pod5 convert fast5 --one-to-one ~{fast5Dir}/ --output ~{outputDir} ~{fast5Dir}/ && \
         tar cf ~{outputTarball} ~{outputDir}
     >>>
