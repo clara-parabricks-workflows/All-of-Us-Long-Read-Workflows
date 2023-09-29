@@ -26,11 +26,11 @@ task fast5ToPod5 {
         mkdir ~{outbase}.pod5s && \
         tar xf ~{inputFAST5tarball} && \
         pod5 convert fast5 --one-to-one ~{outbase}/ --input ~{outbase}/ ~{outputDir} && \
-        tar cf ~{outputPOD5tarball} ~{outputDir}
+        tar cf ~{outputTarball} ~{outputDir}
     >>>
 
     output {
-        File outputPOD5tarball = "~{outputPOD5tarball}"
+        File outputPOD5tarball = "~{outputTarball}"
     }
 
     runtime {
