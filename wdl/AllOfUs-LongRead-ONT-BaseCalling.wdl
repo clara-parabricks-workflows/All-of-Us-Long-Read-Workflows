@@ -133,9 +133,8 @@ task DoradoWithAlignment {
         set -u
         set -o xtrace
         
-        mv ~{inputRefTarball} ~{localTarball} && \
-        tar xvf ~{localTarball} && \
-        tar xf ~{inputPOD5tarball} && \
+        tar xf ~{inputRefTarball} -C `pwd` && \
+        tar xf ~{inputPOD5tarball} -C `pwd` && \
         dorado download --model ~{model} && \
         dorado basecaller ~{"--reference " + ref} ~{model} ~{outbase} | \
         samtools sort --threads ~{sort_threads} -m12g -O BAM -o ~{outbase}.bam --write-index && \
