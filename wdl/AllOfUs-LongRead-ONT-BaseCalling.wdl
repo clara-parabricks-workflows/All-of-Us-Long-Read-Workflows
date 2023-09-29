@@ -20,12 +20,13 @@ task fast5ToPod5 {
     Int auto_diskGB = if runtime_attributes.diskGB == 0 then ceil(size(inputFAST5tarball, "GB") * 4) + 80 else runtime_attributes.diskGB
 
     String outbase = basename(inputFAST5tarball, ".tar")
+    String fast5Dir = outbase
     String outputDir = outbase + ".pod5"
     String outputTarball = outputDir + ".tar"
     command <<<
         mkdir ~{outbase}.pod5s && \
         tar xf ~{inputFAST5tarball} && \
-        pod5 convert fast5 --one-to-one ~{outbase}/ --input ~{outbase}/ ~{outputDir} && \
+        pod5 convert fast5 --one-to-one ~{fast5Dir}/ --output ~{outputDir} ~{fast5Dir}/ && \
         tar cf ~{outputTarball} ~{outputDir}
     >>>
 
