@@ -283,7 +283,7 @@ workflow AoU_ONT_VariantCalling {
         File? clairTargetsBed
 
         ## DeepVariant Runtime Args
-        Boolean runDeepVariant
+        Boolean runDeepVariant = true
         String pbDocker = "nvcr.io/nv-parabricks-dev/clara-parabricks:4.2.0-1.beta3"
         Boolean gvcfMode = false
         File? deepvariantModelFile
