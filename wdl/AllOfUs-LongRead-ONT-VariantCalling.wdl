@@ -283,6 +283,7 @@ workflow AoU_ONT_VariantCalling {
         File? clairTargetsBed
 
         ## DeepVariant Runtime Args
+        Boolean runDeepVariant
         String pbDocker = "nvcr.io/nv-parabricks-dev/clara-parabricks:4.2.0-1.beta3"
         Boolean gvcfMode = false
         File? deepvariantModelFile
@@ -310,17 +311,6 @@ workflow AoU_ONT_VariantCalling {
         "gpuDriverVersion": "535.104.05"
     }
 
-    call deepvariant.deepvariant as deepvariant{
-        input:
-            inputBAM=inputBAM,
-            inputBAI=inputBAI,
-            inputRefTarball=refTarball,
-            gvcfMode=gvcfMode,
-            mode=deepvariantMode,
-            runtime_attributes=deepvariant_attributes,
-            gpu_attributes=deepvariant_gpu_attributes
-    }
-
     RuntimeAttributes dvcompress_attributes = {
         "diskGB": 0,
         "nThreads": 4,
@@ -330,11 +320,26 @@ workflow AoU_ONT_VariantCalling {
         "maxPreemptAttempts": 3,
     }
 
-    call vcf.compressAndIndexVCF as compress_deepVariant {
-        input:
-            inputVCF=deepvariant.outputVCF,
-            attributes=dvcompress_attributes
+    if (runDeepVariant) {
+        call deepvariant.deepvariant as deepvariant{
+            input:
+                inputBAM=inputBAM,
+                inputBAI=inputBAI,
+                inputRefTarball=refTarball,
+                gvcfMode=gvcfMode,
+                mode=deepvariantMode,
+                runtime_attributes=deepvariant_attributes,
+                gpu_attributes=deepvariant_gpu_attributes
+        }
+
+        call vcf.compressAndIndexVCF as compress_deepVariant {
+            input:
+                inputVCF=deepvariant.outputVCF,
+                attributes=dvcompress_attributes
+        }
     }
+
+
 
     RuntimeAttributes sniffles_attributes = {
         "diskGB": 0,
@@ -431,8 +436,8 @@ workflow AoU_ONT_VariantCalling {
         File clairMergeVCF = clair.mergeVCF
 
         # SNV calls from DeepVariant
-        File deepvariantVCF = compress_deepVariant.outputVCFGZ
-        File deepvariantTBI = compress_deepVariant.outputTBI
+        File ?deepvariantVCF = compress_deepVariant.outputVCFGZ
+        File ?deepvariantTBI = compress_deepVariant.outputTBI
 
         # Spectre CNV calls
         File spectreOutput = spectre.outputTarball
