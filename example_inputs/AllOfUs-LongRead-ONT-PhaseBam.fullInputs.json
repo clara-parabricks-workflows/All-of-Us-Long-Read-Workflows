@@ -1,19 +1,18 @@
 {
   "AoU_ONT_Phase.phaseVCF.gbRAM": "Int (optional, default = 62)",
   "AoU_ONT_Phase.haplotagBAM.whatshapDocker": "String (optional, default = \"erictdawson/whatshap\")",
-  "AoU_ONT_Phase.haplotagBAM.inputRefTarball": "File",
   "AoU_ONT_Phase.phaseVCF.maxPreemptAttempts": "Int (optional, default = 3)",
   "AoU_ONT_Phase.inputRefTarball": "File",
-  "AoU_ONT_Phase.phaseVCF.inputRefTarball": "File",
   "AoU_ONT_Phase.inputBAI": "File",
   "AoU_ONT_Phase.phaseVCF.diskGB": "Int (optional, default = 0)",
   "AoU_ONT_Phase.phaseVCF.runtimeMinutes": "Int (optional, default = 240)",
-  "AoU_ONT_Phase.phaseVCF.whatshapDocker": "String (optional, default = \"erictdawson/whatshap\")",
   "AoU_ONT_Phase.phaseVCF.sampleName": "String? (optional)",
   "AoU_ONT_Phase.phaseVCF.nThreads": "Int (optional, default = 24)",
   "AoU_ONT_Phase.inputVCF": "File",
   "AoU_ONT_Phase.phaseVCF.hpcQueue": "String (optional, default = \"norm\")",
   "AoU_ONT_Phase.inputBAM": "File",
-  "AoU_ONT_Phase.inputTBI": "File"
+  "AoU_ONT_Phase.inputTBI": "File",
+  "AoU_ONT_Phase.compress_phased_vcf.dockerImage": "String (optional, default = \"erictdawson/bcftools\")",
+  "AoU_ONT_Phase.phaseVCF.whatshapDocker": "String (optional, default = \"erictdawson/whatshap\")"
 }
 

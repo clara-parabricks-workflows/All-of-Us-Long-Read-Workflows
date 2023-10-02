@@ -1,10 +1,8 @@
 {
-  "AoU_ONT_Phase.haplotagBAM.inputRefTarball": "File",
   "AoU_ONT_Phase.inputRefTarball": "File",
-  "AoU_ONT_Phase.phaseVCF.inputRefTarball": "File",
   "AoU_ONT_Phase.inputBAI": "File",
   "AoU_ONT_Phase.inputVCF": "File",
   "AoU_ONT_Phase.inputBAM": "File",
-  "AoU_ONT_Phase.inputTBI": "File"
+  "AoU_ONT_Phase.inputTBI": "File",
 }
 
