@@ -1,6 +1,8 @@
 version 1.0
 
 import "https://raw.githubusercontent.com/clara-parabricks-workflows/parabricks-wdl/long-read/wdl/util/attributes.wdl"
+import "https://raw.githubusercontent.com/clara-parabricks-workflows/parabricks-wdl/long-read/wdl/util/vcf.wdl" as vcf
+import "https://raw.githubusercontent.com/clara-parabricks-workflows/parabricks-wdl/long-read/wdl/util/sam.wdl" as sam
 
 task phaseVCF {
     input {
@@ -31,22 +33,21 @@ task phaseVCF {
 
     String outbase = basename(basename(inputVCF, ".gz"), ".vcf")
     String localRefTarball = basename(inputBAM)
-    String inputReference = basename(inputRefTarball, ".tar")
+    String ref = basename(inputRefTarball, ".tar")
     Int auto_diskGB = if runtime_attributes.diskGB == 0 then ceil(size(inputBAM, "GB") * 3.2) + ceil(size(inputRefTarball, "GB")) + ceil(size(inputBAI, "GB")) + 65 else runtime_attributes.diskGB
 
     command {
+        cp ~{inputRefTarball} ~{localRefTarball} && \
+        tar vxf ~{localRefTarball} && \
         whatshap phase \
         -o ~{outbase}.phased.vcf \
-        --sample ~{"--sample " + sampleName} \
-        --reference ~{inputReference} \
+        ~{"--sample " + sampleName} \
+        --reference ~{ref} \
         ~{inputVCF} \
-        ~{inputBAM} && \
-        bgzip ~{outbase}.phased.vcf && \
-        tabix ~{outbase}.phased.vcf.gz
+        ~{inputBAM}
     }
     output {
-        File outputPhasedVCF = "~{outbase}.phased.vcf.gz"
-        File outputPhasedTBI = "~{outbase}.phased.vcf.gz.tbi"
+        File outputPhasedVCF = "~{outbase}.phased.vcf"
     }
     runtime {
         docker : "~{whatshapDocker}"
@@ -82,25 +83,23 @@ task haplotagBAM {
     }
 
     String outbase = basename(inputBAM, ".bam")
-    String localRefTarball = basename(inputBAM)
-    String inputReference = basename(inputRefTarball, ".tar")
+    String localRefTarball = basename(inputRefTarball)
+    String ref= basename(localRefTarball, ".tar")
     Int auto_diskGB = if runtime_attributes.diskGB == 0 then ceil(size(inputBAM, "GB") * 3.2) + ceil(size(inputRefTarball, "GB") * 3) + 80 else runtime_attributes.diskGB
     
     command {
-        mv ~{inputRefTarball} ~{localRefTarball} && \
+        cp ~{inputRefTarball} ~{localRefTarball} && \
         tar xvf ~{localRefTarball} && \
         whatshap haplotag \
-        --output-threads ~{runtime_attributes.nThreads}
-        -o ~{outbase}.phased.bam \
-        -r ~{inputReference} \
+        --output-threads ~{runtime_attributes.nThreads} \
+        --output ~{outbase}.phased.bam \
+        --reference ~{ref} \
         ~{inputVCF} \
-        ~{inputBAM} && \
-        samtools index ~{outbase}.phased.bam
+        ~{inputBAM}
     }
 
     output {
         File outputHaplotaggedBAM = "~{outbase}.phased.bam"
-        File outputHaplotaggedBAI = "~{outbase}.phased.bam.bai"
     }
     runtime {
         docker : "~{whatshapDocker}"
@@ -127,24 +126,48 @@ workflow AoU_ONT_Phase {
     call phaseVCF {
         input:
             inputBAM=inputBAM,
+            inputRefTarball=inputRefTarball,
             inputBAI=inputBAI,
             inputVCF=inputVCF,
             inputTBI=inputTBI
+    }
+
+    RuntimeAttributes compress_attributes = {
+        "diskGB": 0,
+        "nThreads": 4,
+        "gbRAM": 9,
+        "hpcQueue": "norm",
+        "runtimeMinutes": 600,
+        "maxPreemptAttempts": 3,
+    }
+
+    call vcf.compressAndIndexVCF as compress_phased_vcf {
+        input:
+            inputVCF=phaseVCF.outputPhasedVCF,
+            attributes=compress_attributes
     }
 
     call haplotagBAM {
         input:
             inputBAM=inputBAM,
             inputBAI=inputBAI,
-            inputVCF=phaseVCF.outputPhasedVCF,
-            inputTBI=phaseVCF.outputPhasedTBI
+            inputRefTarball=inputRefTarball,
+            inputVCF=compress_phased_vcf.outputVCFGZ,
+            inputTBI=compress_phased_vcf.outputTBI
     }
 
+    call sam.indexBAM as indexTaggedBAM {
+        input:
+            inputBAM=haplotagBAM.outputHaplotaggedBAM
+    }
+
+
+
     output {
-        File phasedVCF = phaseVCF.outputPhasedVCF
-        File phasedTBI = phaseVCF.outputPhasedTBI
+        File phasedVCF = compress_phased_vcf.outputVCFGZ
+        File phasedTBI = compress_phased_vcf.outputTBI
         File haplotaggedBAM = haplotagBAM.outputHaplotaggedBAM
-        File haplotaggedBAI = haplotagBAM.outputHaplotaggedBAI
+        File haplotaggedBAI = indexTaggedBAM.outputBAI
     }
 
 }
