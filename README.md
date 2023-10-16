@@ -57,20 +57,35 @@ make build APP=spectre USER=eric
 
 # Workflows
 
+## Basecalling
+
+- [X] Pod5 Convert FAST5
+- Dorado (with alignment)
+
+The basecalling workflow is available at the following links: [Dockstore](https://dockstore.org/my-workflows/github.com/clara-parabricks-workflows/All-of-Us-Long-Read-Workflows/AllOfUs-LongRead-ONT-BaseCalling) [Github](https://github.com/clara-parabricks-workflows/All-of-Us-Long-Read-Workflows/blob/main/wdl/AllOfUs-LongRead-ONT-BaseCalling.wdl) [Terra](https://app.terra.bio/#workspaces/clara-terra/All%20of%20US%20ONT)
+
 ## Alignment
 The `wdl/AllOfUs-LongRead-ONT-Alignment.wdl ` workflow runs minimap2 for alignment, sorting and indexing. The final output is BAM file.
 
-- [X] FASTQ -> BAM + BAI with minimap2
+- [X] FASTQ -> BAM + BAI with minimap2 [Dockstore](https://dockstore.org/workflows/github.com/clara-parabricks-workflows/All-of-Us-Long-Read-Workflows/AllOfUs-LongRead-ONT-Alignment:main?tab=info)
+
+The alignment workflow can be found at the following links: [Dockstore](https://dockstore.org/my-workflows/github.com/clara-parabricks-workflows/All-of-Us-Long-Read-Workflows/AllOfUs-LongRead-ONT-Alignment) [Github](https://github.com/clara-parabricks-workflows/All-of-Us-Long-Read-Workflows/tree/main/wdl/AllOfUs-LongRead-ONT-Alignment.wdl) [Terra](https://app.terra.bio/#workspaces/clara-terra/All%20of%20US%20ONT)
+
+
 
 ## Phasing
 
-- [ ] Phasing with WhatsHap
+- [ ] Whatshap phaseVCF
+- [ ] Whatshap haplotag BAM
 
+The phasing workflow can be found at the following links: [Dockstore](https://dockstore.org/my-workflows/github.com/clara-parabricks-workflows/All-of-Us-Long-Read-Workflows/AllOfUs-LongRead-ONT-PhaseBam) [Github](https://github.com/clara-parabricks-workflows/All-of-Us-Long-Read-Workflows/blob/main/wdl/AllOfUs-LongRead-ONT-PhaseBam.wdl) [Terra](https://app.terra.bio/#workspaces/clara-terra/All%20of%20US%20ONT)
 
 ## Variant calling
 The following tools are used for variant calling (filled boxes represented implemented callers):
 
 - [X] clair3 (SNVs and indels)
-- [X] DeepVariant (SNVs and indels) (with Parabricks)
+- [X] Parabricks DeepVariant (SNVs and indels)
 - [X] sniffles2 (SVs)
 - [ ] STRspy (STRs)
+
+The variant calling workflow can be found at the following links: [Dockstore](https://dockstore.org/my-workflows/github.com/clara-parabricks-workflows/All-of-Us-Long-Read-Workflows/AllOfUs-LongRead-ONT-VariantCalling) [Github](https://github.com/clara-parabricks-workflows/All-of-Us-Long-Read-Workflows/blob/main/wdl/AllOfUs-LongRead-ONT-VariantCalling.wdl) [Terra](https://app.terra.bio/#workspaces/clara-terra/All%20of%20US%20ONT)
