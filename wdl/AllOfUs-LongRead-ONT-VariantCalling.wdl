@@ -284,7 +284,7 @@ workflow AoU_ONT_VariantCalling {
 
         ## DeepVariant Runtime Args
         Boolean runDeepVariant = true
-        String pbDocker = "nvcr.io/nv-parabricks-dev/clara-parabricks:4.2.0-1.beta3"
+        String pbDocker = "nvcr.io/nvidia/clara/clara-parabricks:4.2.0-1"
         Boolean gvcfMode = false
         File? deepvariantModelFile
         String deepvariantMode = "ont"
