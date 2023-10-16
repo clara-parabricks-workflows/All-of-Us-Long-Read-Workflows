@@ -329,7 +329,8 @@ workflow AoU_ONT_VariantCalling {
                 gvcfMode=gvcfMode,
                 mode=deepvariantMode,
                 runtime_attributes=deepvariant_attributes,
-                gpu_attributes=deepvariant_gpu_attributes
+                gpu_attributes=deepvariant_gpu_attributes,
+                pbDocker=pbDocker
         }
 
         call vcf.compressAndIndexVCF as compress_deepVariant {
