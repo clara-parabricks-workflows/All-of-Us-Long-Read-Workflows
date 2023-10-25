@@ -1,6 +1,7 @@
 version 1.0
 
 import "https://raw.githubusercontent.com/clara-parabricks-workflows/parabricks-wdl/long-read/wdl/util/attributes.wdl"
+import "https://raw.githubusercontent.com/clara-parabricks-workflows/parabricks-wdl/long-read/wdl/util/sam.wdl"
 
 task fast5ToPod5 {
     input {
@@ -47,51 +48,6 @@ task fast5ToPod5 {
         preemptible : runtime_attributes.maxPreemptAttempts
     }
 }
-
-# task splitPOD5ByChannel {
-#     input {
-#         File inputPOD5tarball
-#     }
-
-#     RuntimeAttributes runtime_attributes = {
-#         "diskGB": 0,
-#         "nThreads": 24,
-#         "gbRAM": 120,
-#         "hpcQueue": "norm",
-#         "runtimeMinutes": 600,
-#         "maxPreemptAttempts": 3,
-#     }
-
-#     String outbase = basename(inputPOD5tarball, ".tar")
-
-#     command <<<
-#     tar xf ~{inputPOD5tarball} && \
-#     time pod5 view ~{outbase} --include "read_id,channel" --output summary.tsv && \
-#     time pod5 subset ~{pod5dir} --summary summary.tsv --columns channel --output split_by_channel
-#     >>>
-
-#     output {
-
-#     }
-
-#     runtime {
-
-#     }
-# }
-
-# task DoradoNoAlign {
-#     input {
-
-#     }
-#     command <<<
-#     >>>
-#     output {
-
-#     }
-#     runtime {
-
-#     }
-# }
 
 task DoradoWithAlignment {
     input {
@@ -166,27 +122,63 @@ task DoradoWithAlignment {
 
 workflow DoradoBasecall {
     input {
-        File inputFAST5tarball
+        String sampleName
+        Array[File] inputSeqTarballs
+        Boolean isPod5 = false
         File inputRefTarball
         String pod5Docker = "erictdawson/pod5tools"
     }
 
-    call fast5ToPod5{
-        input:
-            inputFAST5tarball=inputFAST5tarball,
-            pod5Docker=pod5Docker
+    if (!isPod5){
+        scatter (tarball in inputSeqTarballs){
+            call fast5ToPod5 {
+                input:
+                    inputFAST5tarball=tarball,
+                    pod5Docker=pod5Docker
+            }
+            call DoradoWithAlignment as dorado_FAST5 {
+                input:
+                    inputPOD5tarball=fast5ToPod5.outputPOD5tarball,
+                    inputRefTarball=inputRefTarball
+            }
+        }
+    }
+    if (!isPod5) {
+        scatter (tarball in inputSeqTarballs){
+            call DoradoWithAlignment as dorado_POD5 {
+                input:
+                    inputPOD5tarball=tarball,
+                    inputRefTarball=inputRefTarball
+            }
+        }
     }
 
-    call DoradoWithAlignment{
+    Array[File] dorado_BAMs = select_first([dorado_POD5.outputBAM, dorado_FAST5.outputBAM])
+    Array[File] dorado_BAIs = select_first([dorado_POD5.outputBAI, dorado_FAST5.outputBAI])
+
+    call sam.mergeBAMs as mergeBAMs {
         input:
-            inputPOD5tarball=fast5ToPod5.outputPOD5tarball,
-            inputRefTarball=inputRefTarball
+            sampleName=sampleName,
+            inputBAMs=dorado_BAMs,
+            inputBAIs=dorado_BAIs
     }
+
+    # call fast5ToPod5{
+    #     input:
+    #         inputFAST5tarball=inputSeqTarball,
+    #         pod5Docker=pod5Docker
+    # }
+
+    # call DoradoWithAlignment{
+    #     input:
+    #         inputPOD5tarball=fast5ToPod5.outputPOD5tarball,
+    #         inputRefTarball=inputRefTarball
+    # }
 
 
     output {
-        File? outputPOD5tarball = fast5ToPod5.outputPOD5tarball
-        File? outputBAM = DoradoWithAlignment.outputBAM
-        File? outputBAI = DoradoWithAlignment.outputBAI        
+        # File? outputPOD5tarball = fast5ToPod5.outputPOD5tarball
+        File outputBAM = mergeBAMs.mergedBAM
+        File outputBAI = mergeBAMs.mergedBAI        
     }
 }
