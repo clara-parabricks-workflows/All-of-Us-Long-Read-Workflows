@@ -79,7 +79,7 @@ task mosdepth {
         }
     }
     String outbase = basename(inputBAM, ".bam")
-    Int auto_diskGB = if runtime_attributes.diskGB == 0 then ceil(size(inputBAM, "GB") * 3.2) + 80 else runtime_attributes.diskGB
+    Int auto_diskGB = if runtime_attributes.diskGB == 0 then ceil(size(inputBAM, "GB") * 1.2) + ceil(size(inputBAI, "GB")) + 80 else runtime_attributes.diskGB
 
     command {
         set -o pipefail
