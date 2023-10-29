@@ -170,7 +170,7 @@ task Dorado {
         
         ## Hack to create an input directory for FAST5 / POD5 files.
         mkdir -p data && \
-        for i in `cat ~{write_lines(inputPOD5s)}`; do ln -s $i data/; done
+        for i in `cat ~{write_lines(inputPOD5s)}`; do ln -s $i data/$(basename $i); done
 
         ~{if defined(inputRefTarball) then "tar xvf " + inputRefTarball + " -C `pwd` && " else ""} \
         dorado download --model ~{model} && \
