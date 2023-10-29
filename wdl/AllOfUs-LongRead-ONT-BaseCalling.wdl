@@ -80,6 +80,7 @@ task splitPOD5ByChannel {
     input {
         Array[File] inputPOD5s
         File summaryFile
+        String pod5Docker = "erictdawson/pod5tools"
     }
 
     RuntimeAttributes runtime_attributes = {
@@ -110,7 +111,15 @@ task splitPOD5ByChannel {
     }
 
     runtime {
-
+        docker : "~{pod5Docker}"
+        disks : "local-disk ~{auto_diskGB} SSD"
+        cpu : runtime_attributes.nThreads
+        memory : "~{runtime_attributes.gbRAM} GB"
+        hpcMemory : runtime_attributes.gbRAM
+        hpcQueue : "~{runtime_attributes.hpcQueue}"
+        hpcRuntimeMinutes : runtime_attributes.runtimeMinutes
+        zones : ["us-central1-a", "us-central1-b", "us-central1-c"]
+        preemptible : runtime_attributes.maxPreemptAttempts
     }
 }
 
