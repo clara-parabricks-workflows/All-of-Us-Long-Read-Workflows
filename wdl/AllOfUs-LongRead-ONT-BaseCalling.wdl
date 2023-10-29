@@ -98,7 +98,7 @@ task splitPOD5ByChannel {
         set -e
         mkdir -e split_by_channel && \
         time pod5 subset \
-        --threads ~{runtime_attributes.nThreads - 1} \
+        --threads ~{runtime_attributes.nThreads - 2} \
         --summary ~{summaryFile} \
         --columns channel \
         --output split_by_channel \
@@ -176,7 +176,7 @@ task Dorado {
     output {
         File? outputBAM = "~{outbase}.bam"
         File? outputBAI= "~{outbase}.bam.bai"
-        File? outputCSI = "~{outbase}.bam.csi"
+        File? outputFASTQ = "~{outbase}.fastq"
     }
     runtime {
         docker : "~{doradoDocker}"
@@ -197,10 +197,15 @@ task Dorado {
 
 workflow DoradoBasecall {
     input {
+        String sampleName
+        String? nameAnnotation
         File inputList
         Boolean isPOD5 = true
+        Boolean runSimplex = true
+        Boolean runDuplex = false
         File? inputRefTarball
-        File? returnFASTQ
+        Boolean emitFASTQ = false
+        Int? minQScore
         String pod5Docker = "erictdawson/pod5tools"
     }
 
@@ -215,25 +220,52 @@ workflow DoradoBasecall {
         }
     }
 
-    Array[File] preparedInputs = select_first([fast5ToPod5.outputPOD5, inputs])
+    Array[File] preparedPOD5s = select_first([fast5ToPod5.outputPOD5, inputs])
 
-    # call fast5ToPod5{
-    #     input:
-    #         inputFAST5tarball=inputFAST5tarball,
-    #         pod5Docker=pod5Docker
-    # }
+    if (runSimplex){
+        call Dorado as simplex {
+            input:
+                sampleName=sampleName,
+                nameAnnotation=nameAnnotation,
+                inputPOD5s=preparedPOD5s,
+                inputRefTarball=inputRefTarball,
+                minQScore=minQScore,
+                emitFASTQ=emitFASTQ,
+                duplex=false
+        }
+    }
 
-    # call DoradoWithAlignment{
-    #     input:
-    #         inputPOD5tarball=fast5ToPod5.outputPOD5tarball,
-    #         inputRefTarball=inputRefTarball
-    # }
+    if (runDuplex){
+        call generatePOD5Summary{
+            input:
+                inputPOD5s=preparedPOD5s
+        }
+        call splitPOD5ByChannel {
+            input:
+                inputPOD5s=preparedPOD5s,
+                summaryFile=generatePOD5Summary.summary
+        }
+        call Dorado as duplex {
+            input:
+                sampleName=sampleName,
+                nameAnnotation=nameAnnotation,
+                inputPOD5s=splitPOD5ByChannel.split_by_channel,
+                inputRefTarball=inputRefTarball,
+                minQScore=minQScore,
+                emitFASTQ=emitFASTQ,
+                duplex=true
+        }
+    }
 
 
     output {
-        # Array[File]? outputPOD5array = fast5ToPod5.outputPOD5s
-        # File? outputFASTQ = Dorado.outputFASTQ
-        # File? outputBAM = Dorado.outputBAM
-        # File? outputBAI = Dorado.outputBAI        
+        Array[File]? outputPOD5array = preparedPOD5s
+        File? simplexBAM = simplex.outputBAM
+        File? simplexBAI = simplex.outputBAI
+        File? simplexFASTQ = simplex.outputFASTQ
+
+        File? duplexBAM = duplex.outputBAM
+        File? deplexBAI = duplex.outputBAI
+        File? duplexFASTQ = duplex.outputFASTQ
     }
 }
