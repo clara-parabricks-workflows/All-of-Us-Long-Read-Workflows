@@ -132,7 +132,7 @@ task Dorado {
         Boolean emitFASTQ = false
         Boolean duplex = false
         Int? minQScore
-        Int mm2_batch_size = 16
+        Int? mm2_batch_size
         String model = "dna_r10.4.1_e8.2_400bps_hac@v4.1.0"
 
         String doradoDocker = "ontresearch/dorado"
@@ -172,7 +172,7 @@ task Dorado {
         dorado download --model ~{model} && \
         dorado \
             ~{if duplex then "duplex" else "basecaller"} \
-            -I ~{mm2_batch_size}G \
+            ~{"-I " + mm2_batch_size + "G"} \
             ~{if emitFASTQ then "--emit-fastq" else ""} \
             ~{"--min-qscore " + minQScore} \
             ~{if defined(inputRefTarball) then "--reference " + ref else ""} \
