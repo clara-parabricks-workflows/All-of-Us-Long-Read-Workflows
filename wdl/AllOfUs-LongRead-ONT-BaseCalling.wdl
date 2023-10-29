@@ -97,7 +97,7 @@ task splitPOD5ByChannel {
 
     command <<<
         set -e
-        mkdir -e split_by_channel && \
+        mkdir split_by_channel && \
         time pod5 subset \
         --threads ~{runtime_attributes.nThreads - 2} \
         --summary ~{summaryFile} \
