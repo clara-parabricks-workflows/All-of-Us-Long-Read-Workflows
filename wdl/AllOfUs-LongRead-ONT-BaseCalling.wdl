@@ -168,6 +168,10 @@ task Dorado {
         set -u
         set -o xtrace
         
+        ## Hack to create an input directory for FAST5 / POD5 files.
+        mkdir -p data && \
+        for i in `cat ~{write_lines(inputPOD5s)}`; do ln -s $i data/; done
+
         ~{if defined(inputRefTarball) then "tar xvf " + inputRefTarball + " -C `pwd` && " else ""} \
         dorado download --model ~{model} && \
         dorado \
@@ -177,8 +181,8 @@ task Dorado {
             ~{"--min-qscore " + minQScore} \
             ~{if defined(inputRefTarball) then "--reference " + ref else ""} \
             ~{model} \
-            ~{sep=" " inputPOD5s} | \
-        ~{if defined(inputRefTarball) then "samtools sort --threads " + sort_threads + " -m12g -O BAM -o " + outbase + ".bam" else " > " + outbase + ".fastq"} && \
+            data/ | \
+        ~{if defined(inputRefTarball) then "samtools sort --threads " + sort_threads + " -m12g -O BAM -o " + outbase + ".bam" else " > " + outbase + ".fastq &&"} \
         ~{if defined(inputRefTarball) then "samtools index " + outbase + ".bam" else '"'}
     >>>
 
