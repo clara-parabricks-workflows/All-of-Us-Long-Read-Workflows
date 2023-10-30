@@ -176,7 +176,7 @@ task Dorado {
             ~{"--min-qscore " + minQScore} \
             ~{if defined(inputRefTarball) then "--reference " + ref else ""} \
             ~{model} \
-            data/ | ~{if defined(inputRefTarball) then "samtools sort --threads " + sort_threads + " -m12g -O BAM -o " + outbase + ".bam" else " > " + outbase + ".fastq &&"} \
+            data/ | ~{if defined(inputRefTarball) then "samtools sort --threads " + sort_threads + " -m12g -O BAM -o " + outbase + ".bam &&" else " > " + outbase + ".fastq &&"} \
         ~{if defined(inputRefTarball) then "samtools index " + outbase + ".bam" else '"'}
     >>>
 
