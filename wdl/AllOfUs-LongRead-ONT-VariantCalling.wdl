@@ -288,12 +288,11 @@ workflow AoU_ONT_VariantCalling {
         Boolean gvcfMode = false
         File? deepvariantModelFile
         String deepvariantMode = "ont"
+        Boolean usePreemptibles = true
 
         ## MosDepth inputs
         Int windowSize = 1000
         Int minMAPQ = 20
-
-        Int maxPreemptAttempts = 3
     }
 
     RuntimeAttributes deepvariant_attributes = {
@@ -302,7 +301,7 @@ workflow AoU_ONT_VariantCalling {
         "gbRAM": 160,
         "hpcQueue": "norm",
         "runtimeMinutes": 600,
-        "maxPreemptAttempts": 3,
+        "maxPreemptAttempts": if (usePreemptibles) then 3 else 0
     }
 
     GPUAttributes deepvariant_gpu_attributes = {
@@ -317,7 +316,7 @@ workflow AoU_ONT_VariantCalling {
         "gbRAM": 9,
         "hpcQueue": "norm",
         "runtimeMinutes": 600,
-        "maxPreemptAttempts": 3,
+        "maxPreemptAttempts": if (usePreemptibles) then 3 else 0,
     }
 
     if (runDeepVariant) {
@@ -348,7 +347,7 @@ workflow AoU_ONT_VariantCalling {
         "gbRAM": 62,
         "hpcQueue": "norm",
         "runtimeMinutes": 600,
-        "maxPreemptAttempts": 3,
+        "maxPreemptAttempts": if (usePreemptibles) then 3 else 0,
     }
 
     call sniffles2 as sniffles{
@@ -368,7 +367,7 @@ workflow AoU_ONT_VariantCalling {
         "gbRAM": 160,
         "hpcQueue": "norm",
         "runtimeMinutes": 600,
-        "maxPreemptAttempts": 3,
+        "maxPreemptAttempts": if (usePreemptibles) then 3 else 0,
     }
 
     GPUAttributes clair_gpu_attributes = {
@@ -393,7 +392,7 @@ workflow AoU_ONT_VariantCalling {
         "gbRAM": 14,
         "hpcQueue": "norm",
         "runtimeMinutes": 600,
-        "maxPreemptAttempts": 3,
+        "maxPreemptAttempts": if (usePreemptibles) then 3 else 0,
     }
 
     call mosdepth {
@@ -411,7 +410,7 @@ workflow AoU_ONT_VariantCalling {
         "gbRAM": 87,
         "hpcQueue": "norm",
         "runtimeMinutes": 600,
-        "maxPreemptAttempts": 3,
+        "maxPreemptAttempts": if (usePreemptibles) then 3 else 0,
     }
 
     call spectre {
