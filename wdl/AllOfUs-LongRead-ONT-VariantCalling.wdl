@@ -365,7 +365,7 @@ workflow AoU_ONT_VariantCalling {
     RuntimeAttributes clair_attributes = {
         "diskGB": 0,
         "nThreads": 48,
-        "gbRAM": 119,
+        "gbRAM": 160,
         "hpcQueue": "norm",
         "runtimeMinutes": 600,
         "maxPreemptAttempts": 3,
